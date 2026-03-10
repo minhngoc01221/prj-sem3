@@ -1,0 +1,258 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+}
+
+// Model for Tourist Spots
+model TouristSpot {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String
+  location    String
+  region      String   // Bắc, Trung, Nam
+  type        String   // bãi biển, núi, di tích, thác nước...
+  images      String[]
+  activities  String[]
+  bestTime    String?
+  ticketPrice Float?
+  rating      Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("tourist_spots")
+}
+
+// Model for Hotels
+model Hotel {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  address     String
+  city        String
+  starRating  Int      // 1-5 sao
+  priceMin    Float
+  priceMax    Float
+  amenities   String[] // wifi, bể bơi, nhà hàng, spa...
+  images      String[]
+  description String
+  rooms       Room[]
+  rating      Float    @default(0)
+  latitude    Float?
+  longitude   Float?
+  contact     String?
+  policies    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("hotels")
+}
+
+model Room {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  hotelId     String   @db.ObjectId
+  type        String   // Standard, Deluxe, Suite...
+  price       Float
+  available   Int      // Số phòng trống
+  maxGuests   Int
+  amenities   String[]
+  images      String[]
+  hotel       Hotel    @relation(fields: [hotelId], references: [id])
+
+  @@map("rooms")
+}
+
+// Model for Restaurants
+model Restaurant {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  address     String
+  city        String
+  cuisineType String   // Việt, Trung, Nhật, Hàn, Ý, hải sản...
+  priceRange  String   // bình dân, trung cấp, cao cấp
+  style       String   // quán ăn, nhà hàng, cafe, bar...
+  openTime    String
+  closeTime   String
+  images      String[]
+  menu        MenuItem[]
+  rating      Float    @default(0)
+  latitude    Float?
+  longitude   Float?
+  contact     String?
+  promotions  String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("restaurants")
+}
+
+model MenuItem {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  restaurantId String     @db.ObjectId
+  name         String
+  description  String?
+  price        Float
+  category     String?
+  image        String?
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@map("menu_items")
+}
+
+// Model for Resorts
+model Resort {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  address     String
+  locationType String  // biển, núi, hồ, đảo...
+  starRating  Int
+  priceMin    Float
+  priceMax    Float
+  resortType  String   // biển, núi, sinh thái, spa...
+  amenities   String[]
+  images      String[]
+  description String
+  activities  String[]
+  rooms       ResortRoom[]
+  rating      Float    @default(0)
+  latitude    Float?
+  longitude   Float?
+  contact     String?
+  packages    String[] // gói combo
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("resorts")
+}
+
+model ResortRoom {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  resortId   String   @db.ObjectId
+  type       String   // Bungalow, Villa, Suite...
+  price      Float
+  available  Int
+  maxGuests  Int
+  amenities  String[]
+  images     String[]
+  resort     Resort   @relation(fields: [resortId], references: [id])
+
+  @@map("resort_rooms")
+}
+
+// Model for Transport
+model Transport {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  type        String   // máy bay, xe khách, tàu hỏa, thuê xe, limousine
+  route       String   // tuyến đường
+  company     String   // nhà xe, hãng hàng không
+  departure   String   // điểm đi
+  arrival     String   // điểm đến
+  schedule    String   // lịch trình
+  price       Float
+  duration    String   // thời gian di chuyển
+  contact     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("transports")
+}
+
+// Model for Tour Packages
+model TourPackage {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String
+  duration    String   // số ngày
+  itinerary   String[]
+  includes    String[]  // dịch vụ bao gồm
+  price       Float
+  discount    Float?    @default(0)
+  startDate   DateTime?
+  endDate     DateTime?
+  destinations String[]
+  images      String[]
+  rating      Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("tour_packages")
+}
+
+// Model for Promotions
+model Promotion {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String
+  discount    Float    // phần trăm giảm giá
+  startDate   DateTime
+  endDate     DateTime
+  code        String?  // mã giảm giá
+  applicableTo String? // loại đối tượng áp dụng
+  conditions  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("promotions")
+}
+
+// Model for Contact/Feedback
+model Contact {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  fullName    String
+  email       String
+  phone       String
+  address     String?
+  serviceType String?  // dịch vụ quan tâm
+  desiredDate DateTime?
+  groupSize   Int?     // số người
+  message     String
+  rating      Int?     // 1-5 sao cho feedback
+  title       String?  // tiêu đề feedback
+  status      String   @default("pending") // pending, processed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("contacts")
+}
+
+// Model for Company Information
+model CompanyInfo {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  history     String
+  vision      String
+  mission     String
+  services    String[]
+  awards      String[]
+  images      String[]
+  contactInfo ContactDetail?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("company_info")
+}
+
+model ContactDetail {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  companyInfoId String    @unique @db.ObjectId
+  address      String
+  phone        String
+  email        String
+  website      String?
+  workingHours String
+  socialLinks  SocialLink[]
+  companyInfo  CompanyInfo @relation(fields: [companyInfoId], references: [id])
+
+  @@map("contact_details")
+}
+
+model SocialLink {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  contactDetailId String        @db.ObjectId
+  platform        String        // Facebook, Instagram, Zalo, YouTube
+  url             String
+  contactDetail   ContactDetail @relation(fields: [contactDetailId], references: [id])
+
+  @@map("social_links")
+}
