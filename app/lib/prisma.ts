@@ -7,9 +7,7 @@ const globalForPrisma = globalThis as unknown as {
 
 const databaseUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/project_travel';
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  datasourceUrl: databaseUrl,
-});
+export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
