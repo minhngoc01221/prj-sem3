@@ -271,9 +271,154 @@ Trang liên hệ cho phép khách hàng đặt dịch vụ, gửi yêu cầu tư
 
 ---
 
+## 2.6. Trang Quản trị (Admin Panel)
+
+#### 2.6.1. Mô tả chức năng
+Trang quản trị (Admin Panel) là nơi để quản lý toàn bộ nội dung và dữ liệu của website. Chỉ có người dùng có quyền quản trị (admin) mới có thể truy cập.
+
+#### 2.6.2. Các yêu cầu cụ thể
+| STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
+|-----|------------|---------------|-------------|
+| F141 | F-ADMIN-001 | Đăng nhập admin với email và mật khẩu | Cao |
+| F142 | F-ADMIN-002 | Dashboard tổng quan với thống kê (tổng số đơn đặt, doanh thu, lượt truy cập) | Cao |
+| F143 | F-ADMIN-003 | Quản lý người dùng (xem, thêm, sửa, xóa) | Cao |
+| F144 | F-ADMIN-004 | Quản lý điểm du lịch (CRUD) | Cao |
+| F145 | F-ADMIN-005 | Quản lý khách sạn (CRUD) | Cao |
+| F146 | F-ADMIN-006 | Quản lý nhà hàng (CRUD) | Cao |
+| F147 | F-ADMIN-007 | Quản lý resort (CRUD) | Cao |
+| F148 | F-ADMIN-008 | Quản lý phương tiện vận chuyển (CRUD) | Cao |
+| F149 | F-ADMIN-009 | Quản lý gói tour (CRUD) | Cao |
+| F150 | F-ADMIN-010 | Quản lý khuyến mãi (CRUD) | Cao |
+| F151 | F-ADMIN-011 | Quản lý liên hệ/phản hồi từ khách hàng | Cao |
+| F152 | F-ADMIN-012 | Quản lý đơn đặt tour/dịch vụ | Cao |
+| F153 | F-ADMIN-013 | Quản lý đánh giá của khách hàng | Trung bình |
+| F154 | F-ADMIN-014 | Xem báo cáo thống kê doanh thu theo tháng | Cao |
+| F155 | F-ADMIN-015 | Xem báo cáo thống kê lượt đặt tour | Cao |
+| F156 | F-ADMIN-016 | Xuất báo cáo ra file Excel/PDF | Trung bình |
+| F157 | F-ADMIN-017 | Quản lý slider/banner trên trang chủ | Cao |
+| F158 | F-ADMIN-018 | Cài đặt thông tin công ty (logo, tên, địa chỉ, liên hệ) | Cao |
+| F159 | F-ADMIN-019 | Phân quyền người dùng (admin, moderator, staff) | Cao |
+| F160 | F-ADMIN-020 | Đăng xuất admin | Cao |
+
+#### 2.6.3. Trang Dashboard Admin
+
+| STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
+|-----|------------|---------------|-------------|
+| F161 | F-DASH-001 | Hiển thị tổng số điểm du lịch | Cao |
+| F162 | F-DASH-002 | Hiển thị tổng số khách sạn | Cao |
+| F163 | F-DASH-003 | Hiển thị tổng số nhà hàng | Cao |
+| F164 | F-DASH-004 | Hiển thị tổng số resort | Cao |
+| F165 | F-DASH-005 | Hiển thị tổng số đơn đặt trong ngày | Cao |
+| F166 | F-DASH-006 | Hiển thị tổng doanh thu trong tháng | Cao |
+| F167 | F-DASH-007 | Hiển thị danh sách đơn đặt gần đây | Cao |
+| F168 | F-DASH-008 | Hiển thị biểu đồ thống kê doanh thu theo tháng | Cao |
+| F169 | F-DASH-009 | Hiển thị danh sách liên hệ chưa đọc | Cao |
+| F170 | F-DASH-010 | Thông báo khi có đơn đặt mới | Trung bình |
+
+#### 2.6.4. Trang Quản lý Điểm du lịch (Admin Tourist Spots)
+
+| STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
+|-----|------------|---------------|-------------|
+| F171 | F-ASPOT-001 | Danh sách tất cả điểm du lịch | Cao |
+| F172 | F-ASPOT-002 | Thêm mới điểm du lịch | Cao |
+| F173 | F-ASPOT-003 | Chỉnh sửa thông tin điểm du lịch | Cao |
+| F174 | F-ASPOT-004 | Xóa điểm du lịch | Cao |
+| F175 | F-ASPOT-005 | Tìm kiếm điểm du lịch | Cao |
+| F176 | F-ASPOT-006 | Lọc theo vùng miền | Cao |
+| F177 | F-ASPOT-007 | Lọc theo loại hình | Cao |
+| F178 | F-ASPOT-008 | Upload nhiều hình ảnh | Cao |
+| F179 | F-ASPOT-009 | Xem số lượng đặt tour liên quan | Trung bình |
+| F180 | F-ASPOT-010 | Thay đổi trạng thái hiển thị | Cao |
+
+#### 2.6.5. Trang Quản lý Khách sạn (Admin Hotels)
+
+| STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
+|-----|------------|---------------|-------------|
+| F181 | F-AHOTEL-001 | Danh sách tất cả khách sạn | Cao |
+| F182 | F-AHOTEL-002 | Thêm mới khách sạn | Cao |
+| F183 | F-AHOTEL-003 | Chỉnh sửa thông tin khách sạn | Cao |
+| F184 | F-AHOTEL-004 | Xóa khách sạn | Cao |
+| F185 | F-AHOTEL-005 | Quản lý các loại phòng của khách sạn | Cao |
+| F186 | F-AHOTEL-006 | Quản lý giá phòng theo ngày | Cao |
+| F187 | F-AHOTEL-007 | Quản lý tình trạng phòng trống | Cao |
+| F188 | F-AHOTEL-008 | Upload gallery hình ảnh | Cao |
+| F189 | F-AHOTEL-009 | Thay đổi trạng thái (hoạt động/không hoạt động) | Cao |
+| F190 | F-AHOTEL-010 | Xem đánh giá từ khách | Cao |
+
+#### 2.6.6. Trang Quản lý Đơn đặt (Admin Bookings)
+
+| STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
+|-----|------------|---------------|-------------|
+| F191 | F-ABOOK-001 | Danh sách tất cả đơn đặt | Cao |
+| F192 | F-ABOOK-002 | Xem chi tiết đơn đặt | Cao |
+| F193 | F-ABOOK-003 | Cập nhật trạng thái đơn (chờ xác nhận, đã xác nhận, hoàn thành, hủy) | Cao |
+| F194 | F-ABOOK-004 | Lọc đơn theo trạng thái | Cao |
+| F195 | F-ABOOK-005 | Lọc đơn theo ngày | Cao |
+| F196 | F-ABOOK-006 | Tìm kiếm đơn theo tên khách | Cao |
+| F197 | F-ABOOK-007 | Hủy đơn đặt | Cao |
+| F198 | F-ABOOK-008 | Gửi email xác nhận cho khách | Cao |
+| F199 | F-ABOOK-009 | Xuất danh sách đơn đặt | Trung bình |
+| F200 | F-ABOOK-010 | Thống kê doanh thu theo đơn | Cao |
+
+#### 2.6.7. Trang Quản lý Khuyến mãi (Admin Promotions)
+
+| STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
+|-----|------------|---------------|-------------|
+| F201 | F-APROMO-001 | Danh sách tất cả khuyến mãi | Cao |
+| F202 | F-APROMO-002 | Thêm mới khuyến mãi | Cao |
+| F203 | F-APROMO-003 | Chỉnh sửa khuyến mãi | Cao |
+| F204 | F-APROMO-004 | Xóa khuyến mãi | Cao |
+| F205 | F-APROMO-005 | Thiết lập ngày bắt đầu và kết thúc | Cao |
+| F206 | F-APROMO-006 | Thiết lập mức giảm giá (%) | Cao |
+| F207 | F-APROMO-007 | Áp dụng cho tour/khách sạn cụ thể | Cao |
+| F208 | F-APROMO-008 | Trạng thái hoạt động/không hoạt động | Cao |
+| F209 | F-APROMO-009 | Hiển thị trên trang chủ (show on home) | Cao |
+| F210 | F-APROMO-010 | Tự động hết hạn khi đến ngày kết thúc | Cao |
+
+#### 2.6.8. Trang Quản lý Liên hệ (Admin Contacts)
+
+| STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
+|-----|------------|---------------|-------------|
+| F211 | F-ACONTACT-001 | Danh sách tin nhắn liên hệ | Cao |
+| F212 | F-ACONTACT-002 | Xem chi tiết tin nhắn | Cao |
+| F213 | F-ACONTACT-003 | Đánh dấu đã đọc/chưa đọc | Cao |
+| F214 | F-ACONTACT-004 | Trả lời tin nhắn qua email | Cao |
+| F215 | F-ACONTACT-005 | Xóa tin nhắn | Cao |
+| F216 | F-ACONTACT-006 | Lọc theo trạng thái (đã đọc/chưa đọc) | Cao |
+| F217 | F-ACONTACT-007 | Tìm kiếm tin nhắn | Cao |
+| F218 | F-ACONTACT-008 | Xuất danh sách liên hệ | Trung bình |
+
+#### 2.6.9. Trang Quản lý Người dùng (Admin Users)
+
+| STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
+|-----|------------|---------------|-------------|
+| F219 | F-AUSER-001 | Danh sách tất cả người dùng | Cao |
+| F220 | F-AUSER-002 | Thêm mới người dùng admin | Cao |
+| F221 | F-AUSER-003 | Chỉnh sửa thông tin người dùng | Cao |
+| F222 | F-AUSER-004 | Xóa người dùng | Cao |
+| F223 | F-AUSER-005 | Phân quyền người dùng (admin, moderator, staff) | Cao |
+| F224 | F-AUSER-006 | Thay đổi mật khẩu người dùng | Cao |
+| F225 | F-AUSER-007 | Kích hoạt/vô hiệu hóa tài khoản | Cao |
+| F226 | F-AUSER-008 | Xem lịch sử đơn đặt của người dùng | Cao |
+
+#### 2.6.10. Trang Cài đặt (Admin Settings)
+
+| STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
+|-----|------------|---------------|-------------|
+| F227 | F-ASET-001 | Cập nhật thông tin công ty | Cao |
+| F228 | F-ASET-002 | Thay đổi logo | Cao |
+| F229 | F-ASET-003 | Cập nhật thông tin liên hệ | Cao |
+| F230 | F-ASET-004 | Quản lý các liên kết mạng xã hội | Cao |
+| F231 | F-ASET-005 | Quản lý menu điều hướng | Cao |
+| F232 | F-ASET-006 | Quản lý banner trang chủ | Cao |
+| F233 | F-ASET-007 | Cấu hình email gửi tự động | Trung bình |
+| F234 | F-ASET-008 | Sao lưu dữ liệu | Trung bình |
+
+---
+
 ## 3. CẤU TRÚC MENU
 
-### 3.1. Menu chính
+### 3.1. Menu chính (Frontend)
 
 ```
 - Trang chủ (Home Page)
@@ -286,6 +431,24 @@ Trang liên hệ cho phép khách hàng đặt dịch vụ, gửi yêu cầu tư
   ├── Thông tin Nhà hàng (Restaurant Information)
   └── Thông tin Resort (Resorts Information)
 - Liên hệ (Contact Us)
+```
+
+### 3.2. Menu Admin Panel
+
+```
+- Dashboard
+- Quản lý điểm du lịch
+- Quản lý khách sạn
+- Quản lý nhà hàng
+- Quản lý resort
+- Quản lý phương tiện
+- Quản lý tour
+- Quản lý đơn đặt
+- Quản lý khuyến mãi
+- Quản lý liên hệ
+- Quản lý người dùng
+- Cài đặt
+- Đăng xuất
 ```
 
 ---
@@ -350,29 +513,35 @@ Trang liên hệ cho phép khách hàng đặt dịch vụ, gửi yêu cầu tư
 
 ### 5.1. Các thực thể chính
 
-1. **Điểm du lịch (TouristSpot)**
+1. **Người dùng (User)**
+   - ID, tên, email, mật khẩu (đã mã hóa), vai trò (admin, moderator, staff), trạng thái, ngày tạo
+
+2. **Điểm du lịch (TouristSpot)**
    - ID, tên, mô tả, hình ảnh, vị trí, loại hình, đánh giá
 
-2. **Khách sạn (Hotel)**
+3. **Khách sạn (Hotel)**
    - ID, tên, địa chỉ, hạng sao, giá phòng, tiện nghi, hình ảnh
 
-3. **Nhà hàng (Restaurant)**
+4. **Nhà hàng (Restaurant)**
    - ID, tên, địa chỉ, loại ẩm thực, mức giá, giờ mở cửa, hình ảnh
 
-4. **Resort**
+5. **Resort**
    - ID, tên, địa chỉ, loại hình, hạng sao, tiện nghi, giá, hình ảnh
 
-5. **Phương tiện vận chuyển (Transport)**
+6. **Phương tiện vận chuyển (Transport)**
    - ID, loại phương tiện, tuyến đường, giá vé, lịch trình
 
-6. **Gói tour (TourPackage)**
+7. **Gói tour (TourPackage)**
    - ID, tên, mô tả, giá, thời gian, điểm đến
 
-7. **Khuyến mãi (Promotion)**
+8. **Khuyến mãi (Promotion)**
    - ID, tên, mô tả, giảm giá, ngày bắt đầu, ngày kết thúc
 
-8. **Liên hệ/Phản hồi (Contact)**
-   - ID, tên khách, email, điện thoại, nội dung, ngày gửi
+9. **Đơn đặt (Booking)**
+   - ID, người dùng, tour/khách sạn, ngày đặt, trạng thái, tổng tiền
+
+10. **Liên hệ/Phản hồi (Contact)**
+    - ID, tên khách, email, điện thoại, nội dung, ngày gửi, trạng thái đã đọc
 
 ---
 
