@@ -39,11 +39,6 @@ export default function Navbar() {
   const [isMobileInfoOpen, setIsMobileInfoOpen] = useState(false);
   const pathname = usePathname();
 
-  // Hide navbar on admin/login pages
-  if (pathname?.startsWith("/admin") || pathname?.startsWith("/login-admin")) {
-    return null;
-  }
-
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);

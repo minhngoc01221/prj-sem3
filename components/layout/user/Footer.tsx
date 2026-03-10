@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { MapPin, Phone, Mail, Facebook, Instagram, Youtube, Send } from "lucide-react";
 
 const quickLinks = [
@@ -17,6 +20,13 @@ const services = [
 ];
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  // Hide footer on admin/login pages
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/login-admin")) {
+    return null;
+  }
+
   return (
     <footer id="contact" className="bg-gray-900 text-white pt-16 pb-8">
       <div className="container mx-auto px-4">

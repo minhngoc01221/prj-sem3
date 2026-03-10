@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import AdminSidebar from "@/components/layout/AdminSidebar";
+import AdminSidebar from "@/components/layout/admin/AdminSidebar";
 
-interface AdminLayoutClientProps {
+export default function AdminSidebarWrapper({
+  children,
+}: {
   children: React.ReactNode;
-}
-
-export default function AdminLayoutClient({ children }: AdminLayoutClientProps) {
+}) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (

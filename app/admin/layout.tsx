@@ -1,29 +1,27 @@
 import type { Metadata } from "next";
-import { DM_Sans } from "next/font/google";
-import AdminLayoutClient from "./admin-layout-client";
-import "../globals.css";
-
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
+import AdminSidebarWrapper from "@/components/layout/admin/AdminSidebarWrapper";
 
 export const metadata: Metadata = {
   title: "Admin Panel - Karnel Travels",
   description: "Hệ thống quản lý nội dung du lịch",
 };
 
-export default function AdminLayout({
+export default function AdminGroupLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <div className={`${dmSans.variable} font-sans antialiased bg-gray-50`}>
-      <AdminLayoutClient>
-        {children}
-      </AdminLayoutClient>
+    <div className="min-h-screen">
+      
+      <div className="flex pt-16">
+        <AdminSidebarWrapper>
+          <div className="flex-1 p-6 lg:p-8">
+            {children}
+          </div>
+        </AdminSidebarWrapper>
+      </div>
+      
     </div>
   );
 }
