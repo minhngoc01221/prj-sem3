@@ -22,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi">
-      <body className={`${dmSans.variable} font-sans antialiased`}>
+    <html lang="vi" className={dmSans.variable}>
+      <body className="font-sans antialiased">
         <UserNavbar />
         <main className="min-h-screen">
           {children}

@@ -1,13 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Metadata } from "next";
 import AdminSidebar from "@/components/layout/admin/AdminSidebar";
-
-export const metadata: Metadata = {
-  title: "Admin Panel - Karnel Travels",
-  description: "Hệ thống quản lý nội dung du lịch",
-};
 
 export default function AdminGroupLayout({
   children,
