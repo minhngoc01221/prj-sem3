@@ -1,10 +1,10 @@
-import Header from "@/components/Header";
-import Hero from "@/components/Hero";
-import Introduction from "@/components/Introduction";
-import Services from "@/components/Services";
-import FeaturedPlaces from "@/components/FeaturedPlaces";
-import Promotions from "@/components/Promotions";
-import Footer from "@/components/Footer";
+import Header from "@/components/layout/Header";
+import Hero from "@/features/home/Hero";
+import Introduction from "@/features/home/Introduction";
+import Services from "@/features/home/Services";
+import FeaturedPlaces from "@/features/home/FeaturedPlaces";
+import Promotions from "@/features/home/Promotions";
+import Footer from "@/components/layout/Footer";
 
 export default function Home() {
   return (
