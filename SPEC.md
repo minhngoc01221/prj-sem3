@@ -414,6 +414,40 @@ Trang quản trị (Admin Panel) là nơi để quản lý toàn bộ nội dung
 | F233 | F-ASET-007 | Cấu hình email gửi tự động | Trung bình |
 | F234 | F-ASET-008 | Sao lưu dữ liệu | Trung bình |
 
+#### 2.6.11. Trang Quản lý Phương tiện (Admin Vehicles/Transports)
+
+| STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
+|-----|------------|---------------|-------------|
+| F235 | F-AVEH-001 | Danh sách tất cả phương tiện vận chuyển | Cao |
+| F236 | F-AVEH-002 | Thêm mới phương tiện | Cao |
+| F237 | F-AVEH-003 | Chỉnh sửa thông tin phương tiện | Cao |
+| F238 | F-AVEH-004 | Xóa phương tiện | Cao |
+| F239 | F-AVEH-005 | Quản lý loại phương tiện (xe khách, limousine, máy bay, tàu hỏa) | Cao |
+| F240 | F-AVEH-006 | Quản lý tuyến đường | Cao |
+| F241 | F-AVEH-007 | Quản lý lịch trình | Cao |
+| F242 | F-AVEH-008 | Quản lý giá vé theo tuyến | Cao |
+| F243 | F-AVEH-009 | Upload hình ảnh phương tiện | Cao |
+| F244 | F-AVEH-010 | Thay đổi trạng thái (hoạt động/không hoạt động) | Cao |
+| F245 | F-AVEH-011 | Quản lý nhà xe/hãng vận chuyển | Cao |
+
+#### 2.6.12. Trang Quản lý Tour (Admin Tours)
+
+| STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
+|-----|------------|---------------|-------------|
+| F246 | F-ATOUR-001 | Danh sách tất cả gói tour | Cao |
+| F247 | F-ATOUR-002 | Thêm mới tour | Cao |
+| F248 | F-ATOUR-003 | Chỉnh sửa thông tin tour | Cao |
+| F249 | F-ATOUR-004 | Xóa tour | Cao |
+| F250 | F-ATOUR-005 | Quản lý lịch trình tour chi tiết | Cao |
+| F251 | F-ATOUR-006 | Quản lý giá tour theo nhóm | Cao |
+| F252 | F-ATOUR-007 | Quản lý ngày khởi hành | Cao |
+| F253 | F-ATOUR-008 | Upload gallery hình ảnh tour | Cao |
+| F254 | F-ATOUR-009 | Quản lý các điểm đến trong tour | Cao |
+| F255 | F-ATOUR-010 | Quản lý dịch vụ bao gồm/ngoại trú | Cao |
+| F256 | F-ATOUR-011 | Thay đổi trạng thái (hoạt động/không hoạt động) | Cao |
+| F257 | F-ATOUR-012 | Xem số lượng đặt tour | Cao |
+| F258 | F-ATOUR-013 | Quản lý hướng dẫn viên du lịch | Trung bình |
+
 ---
 
 ## 3. CẤU TRÚC MENU
