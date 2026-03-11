@@ -6,7 +6,7 @@ import type { Restaurant } from '@/types/admin';
 async function getRestaurants(): Promise<Restaurant[]> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/admin/restaurants`, {
+    const response = await fetch(`${baseUrl}/api/restaurants`, {
       cache: 'no-store',
     });
     const result = await response.json();

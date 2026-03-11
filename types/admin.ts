@@ -98,6 +98,7 @@ export interface Restaurant {
   reviewCount: number;
   isActive: boolean;
   contactPhone?: string;
+  menu?: any[];
   createdAt: string;
   updatedAt: string;
 }
