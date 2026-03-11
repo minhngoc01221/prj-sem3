@@ -11,6 +11,7 @@ export interface TouristSpot {
   bestTime: string;
   ticketPrice?: string;
   isActive: boolean;
+  tourCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -30,8 +31,56 @@ export interface Hotel {
   isActive: boolean;
   contactPhone?: string;
   contactEmail?: string;
+  roomTypes?: RoomType[];
+  reviews?: HotelReview[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface RoomType {
+  id: string;
+  name: string;
+  description: string;
+  basePrice: number;
+  capacity: number;
+  maxCapacity: number;
+  amenities: string[];
+  images: string[];
+  totalRooms: number;
+  availableRooms: number;
+  pricing: RoomPricing[];
+  availability: RoomAvailability[];
+}
+
+export interface RoomPricing {
+  id: string;
+  date: string;
+  price: number;
+  isSpecial: boolean;
+  specialReason?: string;
+}
+
+export interface RoomAvailability {
+  id: string;
+  date: string;
+  available: number;
+  booked: number;
+}
+
+export interface HotelReview {
+  id: string;
+  hotelId: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  rating: number;
+  comment: string;
+  images?: string[];
+  createdAt: string;
+  response?: {
+    content: string;
+    respondedAt: string;
+  };
 }
 
 export interface Restaurant {
@@ -69,18 +118,6 @@ export interface Resort {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface RoomType {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  capacity: number;
-  amenities: string[];
-  images: string[];
-  available: number;
-  total: number;
 }
 
 export interface Vehicle {
