@@ -448,6 +448,44 @@ Trang quản trị (Admin Panel) là nơi để quản lý toàn bộ nội dung
 | F257 | F-ATOUR-012 | Xem số lượng đặt tour | Cao |
 | F258 | F-ATOUR-013 | Quản lý hướng dẫn viên du lịch | Trung bình |
 
+#### 2.6.13. Trang Quản lý Nhà hàng (Admin Restaurants)
+
+| STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
+|-----|------------|---------------|-------------|
+| F259 | F-AREST-001 | Danh sách tất cả nhà hàng | Cao |
+| F260 | F-AREST-002 | Thêm mới nhà hàng | Cao |
+| F261 | F-AREST-003 | Chỉnh sửa thông tin nhà hàng | Cao |
+| F262 | F-AREST-004 | Xóa nhà hàng | Cao |
+| F263 | F-AREST-005 | Quản lý thực đơn (món ăn, giá cả) | Cao |
+| F264 | F-AREST-006 | Quản lý hình ảnh (gallery) | Cao |
+| F265 | F-AREST-007 | Quản lý thông tin đặt bàn | Cao |
+| F266 | F-AREST-008 | Cập nhật giờ mở cửa/đóng cửa | Cao |
+| F267 | F-AREST-009 | Thay đổi trạng thái (hoạt động/không hoạt động) | Cao |
+| F268 | F-AREST-010 | Xem đánh giá từ khách | Cao |
+| F269 | F-AREST-011 | Quản lý loại ẩm thực | Cao |
+| F270 | F-AREST-012 | Quản lý mức giá (bình dân, trung cấp, cao cấp) | Cao |
+| F271 | F-AREST-013 | Tìm kiếm và lọc nhà hàng | Cao |
+
+#### 2.6.14. Trang Quản lý Resort (Admin Resorts)
+
+| STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
+|-----|------------|---------------|-------------|
+| F272 | F-ARESO-001 | Danh sách tất cả resort | Cao |
+| F273 | F-ARESO-002 | Thêm mới resort | Cao |
+| F274 | F-ARESO-003 | Chỉnh sửa thông tin resort | Cao |
+| F275 | F-ARESO-004 | Xóa resort | Cao |
+| F276 | F-ARESO-005 | Quản lý các loại phòng/bungalow | Cao |
+| F277 | F-ARESO-006 | Quản lý giá phòng theo ngày | Cao |
+| F278 | F-ARESO-007 | Quản lý tình trạng phòng trống | Cao |
+| F279 | F-ARESO-008 | Upload gallery hình ảnh | Cao |
+| F280 | F-ARESO-009 | Thay đổi trạng thái (hoạt động/không hoạt động) | Cao |
+| F281 | F-ARESO-010 | Xem đánh giá từ khách | Cao |
+| F282 | F-ARESO-011 | Quản lý các hoạt động và dịch vụ tại resort | Cao |
+| F283 | F-ARESO-012 | Quản lý các gói combo (lưu trú+đi lại+ăn uống) | Cao |
+| F284 | F-ARESO-013 | Quản lý loại hình resort (biển, núi, sinh thái, spa) | Cao |
+| F285 | F-ARESO-014 | Quản lý tiện nghi (bể bơi, spa, gym, bar, kids club) | Cao |
+| F286 | F-ARESO-015 | Tìm kiếm và lọc resort | Cao |
+
 ---
 
 ## 3. CẤU TRÚC MENU
@@ -554,28 +592,28 @@ Trang quản trị (Admin Panel) là nơi để quản lý toàn bộ nội dung
    - ID, tên, mô tả, hình ảnh, vị trí, loại hình, đánh giá
 
 3. **Khách sạn (Hotel)**
-   - ID, tên, địa chỉ, hạng sao, giá phòng, tiện nghi, hình ảnh
+   - ID, tên, địa chỉ, thành phố, hạng sao, giá phòng (min/max), tiện nghi, hình ảnh, liên hệ, chính sách, trạng thái hoạt động
 
 4. **Nhà hàng (Restaurant)**
-   - ID, tên, địa chỉ, loại ẩm thực, mức giá, giờ mở cửa, hình ảnh
+   - ID, tên, địa chỉ, thành phố, loại ẩm thực (Việt, Trung, Nhật, Hàn, Ý, hải sản...), mức giá (bình dân, trung cấp, cao cấp), phong cách (quán ăn, nhà hàng, cafe, bar), giờ mở cửa, giờ đóng cửa, hình ảnh, thực đơn, thông tin đặt bàn, trạng thái hoạt động, đánh giá
 
 5. **Resort**
-   - ID, tên, địa chỉ, loại hình, hạng sao, tiện nghi, giá, hình ảnh
+   - ID, tên, địa chỉ, thành phố, loại hình (biển, núi, hồ, đảo, sinh thái, spa), hạng sao, tiện nghi (bể bơi, spa, gym, bar, kids club...), giá phòng (min/max), hình ảnh, các hoạt động/dịch vụ, các gói combo, trạng thái hoạt động, đánh giá
 
 6. **Phương tiện vận chuyển (Transport)**
-   - ID, loại phương tiện, tuyến đường, giá vé, lịch trình
+   - ID, loại phương tiện (xe khách, limousine, máy bay, tàu hỏa), tuyến đường, giá vé, lịch trình, hình ảnh, nhà xe/hãng vận chuyển, trạng thái hoạt động
 
 7. **Gói tour (TourPackage)**
-   - ID, tên, mô tả, giá, thời gian, điểm đến
+   - ID, tên, mô tả, giá, thời gian, điểm đến, lịch trình chi tiết, ngày khởi hành, gallery hình ảnh, dịch vụ bao gồm/ngoại trú, trạng thái hoạt động
 
 8. **Khuyến mãi (Promotion)**
-   - ID, tên, mô tả, giảm giá, ngày bắt đầu, ngày kết thúc
+   - ID, tên, mô tả, giảm giá (%), ngày bắt đầu, ngày kết thúc, áp dụng cho (tour/khách sạn), trạng thái, hiển thị trang chủ
 
 9. **Đơn đặt (Booking)**
-   - ID, người dùng, tour/khách sạn, ngày đặt, trạng thái, tổng tiền
+   - ID, người dùng, tour/khách sạn/resort, ngày đặt, trạng thái (chờ xác nhận, đã xác nhận, hoàn thành, hủy), tổng tiền
 
 10. **Liên hệ/Phản hồi (Contact)**
-    - ID, tên khách, email, điện thoại, nội dung, ngày gửi, trạng thái đã đọc
+    - ID, tên khách, email, điện thoại, nội dung, ngày gửi, trạng thái đã đọc/chưa đọc
 
 ---
 
