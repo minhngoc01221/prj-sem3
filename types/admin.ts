@@ -211,18 +211,22 @@ export interface Promotion {
 
 export interface Contact {
   id: string;
-  name: string;
+  fullName: string;
   email: string;
   phone?: string;
   address?: string;
-  subject: string;
+  serviceType?: string;
+  desiredDate?: string;
+  groupSize?: number;
+  title?: string;
   message: string;
-  service?: string;
-  preferredDate?: string;
-  guestCount?: string;
   rating?: number;
-  isRead: boolean;
+  status: 'unread' | 'read' | 'replied';
+  replyMessage?: string;
+  repliedAt?: string;
+  repliedBy?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface User {

@@ -258,20 +258,23 @@ model Promotion {
 
 // Model for Contact/Feedback
 model Contact {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  fullName    String
-  email       String
-  phone       String
-  address     String?
-  serviceType String?
-  desiredDate DateTime?
-  groupSize   Int?
-  message     String
-  rating      Int?
-  title       String?
-  status      String    @default("pending")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  fullName     String
+  email        String
+  phone        String?
+  address      String?
+  serviceType  String?   @map("service_type")
+  desiredDate  DateTime? @map("desired_date")
+  groupSize    Int?      @map("group_size")
+  title        String?   @map("title")
+  message      String
+  rating       Int?
+  status       String    @default("unread") // "unread" | "read" | "replied"
+  replyMessage String?   @map("reply_message")
+  repliedAt    DateTime? @map("replied_at")
+  repliedBy    String?   @map("replied_by")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
   @@map("contacts")
 }
