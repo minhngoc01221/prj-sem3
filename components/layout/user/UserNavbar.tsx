@@ -151,7 +151,7 @@ export default function Navbar() {
               <Search className="w-5 h-5" />
             </button>
             <Link
-              href="/login"
+              href="/auth/login"
               className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-medium px-5 py-2.5 rounded-full transition-colors"
             >
               <LogIn className="w-4 h-4" />
@@ -218,7 +218,7 @@ export default function Navbar() {
               {/* Mobile Login Button */}
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <Link
-                  href="/login"
+                  href="/auth/login"
                   className="flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-medium px-5 py-3 rounded-full transition-colors"
                 >
                   <LogIn className="w-4 h-4" />

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
 import UserNavbar from "@/components/layout/user/UserNavbar";
 import Footer from "@/components/layout/user/Footer";
+import { AuthProvider } from "@/contexts/AuthContext";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -24,11 +25,13 @@ export default function RootLayout({
   return (
     <html lang="vi" className={dmSans.variable}>
       <body className="font-sans antialiased">
-        <UserNavbar />
-        <main className="min-h-screen">
-          {children}
-        </main>
-        <Footer />
+        <AuthProvider>
+          <UserNavbar />
+          <main className="min-h-screen">
+            {children}
+          </main>
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   );

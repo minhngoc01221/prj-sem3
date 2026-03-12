@@ -241,14 +241,103 @@ export interface Contact {
 
 export interface User {
   id: string;
+  _id?: string;
   name: string;
   email: string;
-  role: 'admin' | 'moderator' | 'staff';
+  password?: string; // Only for traditional login
+  role: 'admin' | 'moderator' | 'staff' | 'user';
   status: 'active' | 'inactive';
   avatar?: string;
   phone?: string;
   createdAt: string;
   lastLogin?: string;
+  
+  // Social Login Fields
+  provider?: 'google' | 'facebook' | 'traditional';
+  providerId?: string; // ID from social provider
+  emailVerified?: boolean;
+  
+  // Password Reset Fields
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
+  
+  // Account Verification
+  isEmailVerified?: boolean;
+  verificationToken?: string;
+}
+
+// Auth Payload for JWT
+export interface AuthPayload {
+  userId: string;
+  email: string;
+  role: string;
+}
+
+// Login Request/Response
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  message: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    avatar?: string;
+  };
+  accessToken: string;
+}
+
+// Register Request/Response
+export interface RegisterRequest {
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
+}
+
+export interface RegisterResponse {
+  message: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+  };
+}
+
+// Social Login Request
+export interface SocialLoginRequest {
+  provider: 'google' | 'facebook';
+  providerToken: string; // Token from Google/Facebook
+}
+
+export interface SocialProfile {
+  id: string;
+  email: string;
+  name: string;
+  picture?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+// Forgot Password
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+}
+
+// Auth State
+export interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 export interface PaginatedResponse<T> {
