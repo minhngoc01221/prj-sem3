@@ -21,19 +21,22 @@ import {
   Settings,
   ChevronRight,
   UserCircle,
-  Plane
+  Plane,
+  Briefcase
 } from "lucide-react";
 
 const navLinks = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about" },
   { label: "Search", href: "/search" },
+  { label: "Information", href: "/information" },
   { label: "Contact", href: "/contact" },
 ];
 
 const infoMenuItems = [
   { label: "Tourist Spots", href: "/spots", icon: MapPin },
-  { label: "Travel Info", href: "/travel", icon: Bus },
+  { label: "Tours", href: "/tours", icon: Briefcase },
+  { label: "Transport", href: "/transport", icon: Bus },
   { label: "Hotels", href: "/hotels", icon: Building2 },
   { label: "Restaurants", href: "/restaurants", icon: Utensils },
   { label: "Resorts", href: "/resorts", icon: Palmtree },
