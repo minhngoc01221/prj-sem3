@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   ShoppingCart, 
   Search, 
-  Edit2, 
   Eye, 
   Check,
   X,
@@ -15,52 +14,91 @@ import {
   Users,
   DollarSign,
   Clock,
-  Filter,
+  Download,
+  Loader2,
+  FileSpreadsheet,
+  AlertCircle,
   Mail,
-  Download
+  Phone
 } from 'lucide-react';
 import type { Booking } from '@/types/admin';
+import { BookingDetailModal } from './BookingDetailModal';
+import { DeleteConfirmModal } from '../promotions/DeleteConfirmModal';
 
 interface BookingsManagementContentProps {
   bookings: Booking[];
   isLoading: boolean;
 }
 
-const statusLabels = {
+const statusLabels: Record<string, string> = {
   pending: 'Chờ xác nhận',
   confirmed: 'Đã xác nhận',
   completed: 'Hoàn thành',
   cancelled: 'Đã hủy'
 };
 
-const statusColors = {
+const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-700',
   confirmed: 'bg-blue-100 text-blue-700',
   completed: 'bg-green-100 text-green-700',
   cancelled: 'bg-red-100 text-red-700'
 };
 
-const paymentLabels = {
+const paymentLabels: Record<string, string> = {
   unpaid: 'Chưa thanh toán',
   paid: 'Đã thanh toán',
   refunded: 'Đã hoàn tiền'
 };
 
+const paymentColors: Record<string, string> = {
+  unpaid: 'bg-red-100 text-red-700',
+  paid: 'bg-green-100 text-green-700',
+  refunded: 'bg-purple-100 text-purple-700'
+};
+
 export function BookingsManagementContent({ bookings: initialBookings, isLoading }: BookingsManagementContentProps) {
-  const [bookings, setBookings] = useState(initialBookings);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingBooking, setDeletingBooking] = useState<Booking | null>(null);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
   const itemsPerPage = 10;
 
+  useEffect(() => {
+    setBookings(initialBookings || []);
+  }, [initialBookings]);
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const filteredBookings = bookings.filter(booking => {
-    const matchesSearch = booking.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = 
+      booking.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.itemName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.id?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
     const matchesPayment = paymentFilter === 'all' || booking.paymentStatus === paymentFilter;
-    return matchesSearch && matchesStatus && matchesPayment;
+    
+    let matchesDate = true;
+    if (dateFrom && booking.bookingDate) {
+      matchesDate = new Date(booking.bookingDate) >= new Date(dateFrom);
+    }
+    if (dateTo && booking.bookingDate) {
+      matchesDate = matchesDate && new Date(booking.bookingDate) <= new Date(dateTo + 'T23:59:59');
+    }
+    
+    return matchesSearch && matchesStatus && matchesPayment && matchesDate;
   });
 
   const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
@@ -69,11 +107,102 @@ export function BookingsManagementContent({ bookings: initialBookings, isLoading
     currentPage * itemsPerPage
   );
 
-  const handleUpdateStatus = (id: string, newStatus: Booking['status']) => {
-    setBookings(prev => prev.map(b => 
-      b.id === id ? { ...b, status: newStatus } : b
-    ));
+  const handleViewDetail = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setIsDetailModalOpen(true);
   };
+
+  const handleUpdateStatus = async (id: string, newStatus: Booking['status']) => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/api/admin/bookings/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        setBookings(prev => prev.map(b => b.id === id ? { ...b, status: newStatus } : b));
+        showToast('success', `Đơn hàng đã chuyển sang "${statusLabels[newStatus]}"`);
+      } else {
+        showToast('error', result.message || 'Cập nhật thất bại');
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      showToast('error', 'Đã xảy ra lỗi.');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletingBooking) return;
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/api/admin/bookings/${deletingBooking.id}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json();
+      if (result.success) {
+        setBookings(prev => prev.filter(b => b.id !== deletingBooking.id));
+        showToast('success', 'Xóa đơn hàng thành công!');
+      } else {
+        showToast('error', result.message || 'Xóa thất bại');
+      }
+    } catch (error) {
+      console.error('Error deleting booking:', error);
+      showToast('error', 'Đã xảy ra lỗi.');
+    } finally {
+      setIsDeleteModalOpen(false);
+      setDeletingBooking(null);
+    }
+  };
+
+  // Export CSV (F199)
+  const handleExportCSV = () => {
+    const headers = ['Mã đơn', 'Tên khách', 'Email', 'SĐT', 'Dịch vụ', 'Tên', 'Ngày đặt', 'Ngày khởi hành', 'Số khách', 'Tổng tiền', 'Thanh toán', 'Trạng thái'];
+    const rows = filteredBookings.map(b => [
+      b.id,
+      b.userName || '',
+      b.userEmail || '',
+      b.userPhone || '',
+      b.type || '',
+      b.itemName || '',
+      b.bookingDate ? new Date(b.bookingDate).toLocaleDateString('vi-VN') : '',
+      b.travelDate ? new Date(b.travelDate).toLocaleDateString('vi-VN') : '',
+      b.guests || '',
+      b.totalPrice || 0,
+      paymentLabels[b.paymentStatus] || b.paymentStatus,
+      statusLabels[b.status] || b.status
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `danh-sach-don-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast('success', 'Xuất file Excel thành công!');
+  };
+
+  const openDeleteModal = (booking: Booking) => {
+    setDeletingBooking(booking);
+    setIsDeleteModalOpen(true);
+  };
+
+  // Calculate stats
+  const totalRevenue = bookings
+    .filter(b => b.paymentStatus === 'paid')
+    .reduce((acc, b) => acc + (b.totalPrice || 0), 0);
+  const pendingCount = bookings.filter(b => b.status === 'pending').length;
+  const confirmedCount = bookings.filter(b => b.status === 'confirmed').length;
+  const completedCount = bookings.filter(b => b.status === 'completed').length;
 
   if (isLoading) {
     return (
@@ -95,19 +224,32 @@ export function BookingsManagementContent({ bookings: initialBookings, isLoading
 
   return (
     <div className="space-y-6">
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg ${
+          toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        }`}>
+          {toast.type === 'success' ? <Check className="w-5 h-5" /> : <X className="w-5 h-5" />}
+          {toast.message}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Quản lý đơn đặt</h1>
           <p className="text-gray-500 mt-1">Quản lý tất cả đơn đặt tour và dịch vụ</p>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
-          <Download className="w-5 h-5" />
-          Xuất danh sách
+        <button 
+          onClick={handleExportCSV}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+        >
+          <FileSpreadsheet className="w-5 h-5" />
+          Xuất Excel
         </button>
       </div>
 
-      {/* Stats */}
+      {/* Stats (F200) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-center gap-4">
@@ -127,9 +269,7 @@ export function BookingsManagementContent({ bookings: initialBookings, isLoading
             </div>
             <div>
               <p className="text-sm text-gray-500">Chờ xác nhận</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {bookings.filter(b => b.status === 'pending').length}
-              </p>
+              <p className="text-2xl font-bold text-gray-900">{pendingCount}</p>
             </div>
           </div>
         </div>
@@ -140,9 +280,7 @@ export function BookingsManagementContent({ bookings: initialBookings, isLoading
             </div>
             <div>
               <p className="text-sm text-gray-500">Hoàn thành</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {bookings.filter(b => b.status === 'completed').length}
-              </p>
+              <p className="text-2xl font-bold text-gray-900">{completedCount}</p>
             </div>
           </div>
         </div>
@@ -154,51 +292,71 @@ export function BookingsManagementContent({ bookings: initialBookings, isLoading
             <div>
               <p className="text-sm text-gray-500">Doanh thu</p>
               <p className="text-2xl font-bold text-gray-900">
-                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(
-                  bookings.filter(b => b.paymentStatus === 'paid').reduce((acc, b) => acc + b.totalPrice, 0)
-                )}
+                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(totalRevenue)}
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters (F191-F193) */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm đơn đặt..."
+              placeholder="Tìm kiếm theo tên, email, mã đơn..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
           </div>
-          <div className="flex gap-4">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-            >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="pending">Chờ xác nhận</option>
-              <option value="confirmed">Đã xác nhận</option>
-              <option value="completed">Hoàn thành</option>
-              <option value="cancelled">Đã hủy</option>
-            </select>
-            <select
-              value={paymentFilter}
-              onChange={(e) => setPaymentFilter(e.target.value)}
-              className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-            >
-              <option value="all">Tất cả thanh toán</option>
-              <option value="unpaid">Chưa thanh toán</option>
-              <option value="paid">Đã thanh toán</option>
-              <option value="refunded">Đã hoàn tiền</option>
-            </select>
+          {/* Date Range Picker */}
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                placeholder="Từ ngày"
+              />
+            </div>
+            <span className="text-gray-400">-</span>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                placeholder="Đến ngày"
+              />
+            </div>
           </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+          >
+            <option value="all">Tất cả trạng thái</option>
+            <option value="pending">Chờ xác nhận</option>
+            <option value="confirmed">Đã xác nhận</option>
+            <option value="completed">Hoàn thành</option>
+            <option value="cancelled">Đã hủy</option>
+          </select>
+          <select
+            value={paymentFilter}
+            onChange={(e) => setPaymentFilter(e.target.value)}
+            className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+          >
+            <option value="all">Tất cả thanh toán</option>
+            <option value="unpaid">Chưa thanh toán</option>
+            <option value="paid">Đã thanh toán</option>
+            <option value="refunded">Đã hoàn tiền</option>
+          </select>
         </div>
       </div>
 
@@ -224,7 +382,9 @@ export function BookingsManagementContent({ bookings: initialBookings, isLoading
               {paginatedBookings.map((booking) => (
                 <tr key={booking.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
-                    <span className="font-mono text-sm text-gray-900">{booking.id.slice(0, 8)}</span>
+                    <span className="font-mono text-sm text-gray-900 bg-gray-100 px-2 py-1 rounded">
+                      {booking.id?.slice(0, 8)}...
+                    </span>
                   </td>
                   <td className="px-6 py-4">
                     <div>
@@ -238,56 +398,54 @@ export function BookingsManagementContent({ bookings: initialBookings, isLoading
                       <p className="text-sm text-gray-500 capitalize">{booking.type}</p>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {new Date(booking.bookingDate).toLocaleDateString('vi-VN')}
+                  <td className="px-6 py-4 text-gray-600 text-sm">
+                    {booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString('vi-VN') : '-'}
                   </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {new Date(booking.travelDate).toLocaleDateString('vi-VN')}
+                  <td className="px-6 py-4 text-gray-600 text-sm">
+                    {booking.travelDate ? new Date(booking.travelDate).toLocaleDateString('vi-VN') : '-'}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-1 text-gray-600">
                       <Users className="w-4 h-4" />
-                      {booking.guests}
+                      {booking.guests || 1}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(booking.totalPrice)}
+                  <td className="px-6 py-4 text-gray-900 font-medium">
+                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(booking.totalPrice || 0)}
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
-                      booking.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' :
-                      booking.paymentStatus === 'refunded' ? 'bg-purple-100 text-purple-700' :
-                      'bg-red-100 text-red-700'
-                    }`}>
-                      {paymentLabels[booking.paymentStatus]}
+                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${paymentColors[booking.paymentStatus] || 'bg-gray-100 text-gray-700'}`}>
+                      {paymentLabels[booking.paymentStatus] || booking.paymentStatus}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[booking.status]}`}>
-                      {statusLabels[booking.status]}
+                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[booking.status] || 'bg-gray-100 text-gray-700'}`}>
+                      {statusLabels[booking.status] || booking.status}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/admin/bookings/${booking.id}`}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleViewDetail(booking)}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         title="Xem chi tiết"
                       >
                         <Eye className="w-4 h-4" />
-                      </Link>
-                      <Link
-                        href={`/admin/bookings/${booking.id}/edit`}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Chỉnh sửa"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Link>
+                      </button>
                       {booking.status === 'pending' && (
                         <button
                           onClick={() => handleUpdateStatus(booking.id, 'confirmed')}
                           className="p-2 text-green-500 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
                           title="Xác nhận"
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                      )}
+                      {booking.status === 'confirmed' && (
+                        <button
+                          onClick={() => handleUpdateStatus(booking.id, 'completed')}
+                          className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Hoàn thành"
                         >
                           <Check className="w-4 h-4" />
                         </button>
@@ -301,6 +459,13 @@ export function BookingsManagementContent({ bookings: initialBookings, isLoading
                           <X className="w-4 h-4" />
                         </button>
                       )}
+                      <button
+                        onClick={() => openDeleteModal(booking)}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Xóa"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -313,36 +478,29 @@ export function BookingsManagementContent({ bookings: initialBookings, isLoading
         {filteredBookings.length > 0 && (
           <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
             <p className="text-sm text-gray-500">
-              Hiển thị {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredBookings.length)} của {filteredBookings.length} đơn đặt
+              Hiển thị {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredBookings.length)} của {filteredBookings.length} đơn
             </p>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              {[...Array(Math.min(5, totalPages))].map((_, i) => {
-                const page = i + 1;
-                return (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
-                      currentPage === page 
-                        ? 'bg-orange-500 text-white' 
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                );
-              })}
+              {[...Array(Math.min(5, totalPages))].map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-10 h-10 rounded-lg text-sm font-medium ${currentPage === i + 1 ? 'bg-orange-500 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                >
+                  {i + 1}
+                </button>
+              ))}
               <button
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
-                className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -350,6 +508,24 @@ export function BookingsManagementContent({ bookings: initialBookings, isLoading
           </div>
         )}
       </div>
+
+      {/* Detail Modal */}
+      <BookingDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        booking={selectedBooking}
+        onStatusChange={handleUpdateStatus}
+      />
+
+      {/* Delete Modal */}
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+        title="Xóa đơn đặt"
+        message="Bạn có chắc chắn muốn xóa đơn đặt này? Hành động này không thể hoàn tác."
+        itemName={deletingBooking?.userName}
+      />
     </div>
   );
 }
