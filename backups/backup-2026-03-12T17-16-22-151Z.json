@@ -1,0 +1,265 @@
+{
+  "1": [],
+  "resorts": [
+    {
+      "_id": "69b1ab27bac9aa3c1bd47ad9",
+      "name": "1",
+      "description": "1",
+      "address": "1",
+      "city": "1",
+      "location": "beach",
+      "starRating": 4,
+      "priceMin": 1000,
+      "priceMax": 100000,
+      "priceRange": "",
+      "amenities": [
+        "Bể bơi",
+        "Spa",
+        "Gym",
+        "Airport shuttle",
+        "Laundry"
+      ],
+      "services": [
+        "Massage",
+        "Grooming",
+        "Sunset cruise",
+        "Island hopping"
+      ],
+      "images": [],
+      "rating": 0,
+      "reviewCount": 0,
+      "isActive": true,
+      "contactPhone": "",
+      "policies": "",
+      "roomTypes": [],
+      "combos": [],
+      "createdAt": "2026-03-11T17:49:27.465Z",
+      "updatedAt": "2026-03-11T17:49:27.465Z"
+    }
+  ],
+  "social_links": [],
+  "tour_packages": [
+    {
+      "_id": "69b2dce1f847fe8f38abc8b6",
+      "name": "13432",
+      "description": "1",
+      "duration": "1",
+      "itinerary": [],
+      "includes": [],
+      "price": 1000,
+      "discount": 20,
+      "startDate": null,
+      "endDate": null,
+      "destinations": [
+        "12",
+        "nam"
+      ],
+      "images": [
+        "blob:http://localhost:3000/488aafd8-ae2e-46aa-96fb-766b15bfb876"
+      ],
+      "rating": 0,
+      "isActive": true,
+      "createdAt": "2026-03-12T15:33:53.659Z",
+      "updatedAt": "2026-03-12T15:47:58.537Z"
+    }
+  ],
+  "menu_items": [],
+  "hotels": [
+    {
+      "_id": "69b17895bac9aa3c1bd47ad2",
+      "name": null,
+      "address": null,
+      "city": null,
+      "starRating": null,
+      "priceMin": 0,
+      "priceMax": 0,
+      "amenities": [],
+      "images": [
+        "blob:http://localhost:3000/e1fb623f-70a8-4a1a-b1cc-b0151505a767"
+      ],
+      "description": "",
+      "contact": "",
+      "policies": "",
+      "rating": 0,
+      "isActive": true,
+      "createdAt": "2026-03-11T14:13:41.388Z",
+      "updatedAt": "2026-03-11T14:38:08.456Z"
+    }
+  ],
+  "contacts": [],
+  "restaurants": [
+    {
+      "_id": "69b1a7a9bac9aa3c1bd47ad8",
+      "name": null,
+      "description": "",
+      "address": null,
+      "city": null,
+      "cuisineType": null,
+      "priceRange": null,
+      "style": null,
+      "openingHours": null,
+      "closingHours": null,
+      "images": [],
+      "rating": 0,
+      "reviewCount": 0,
+      "isActive": true,
+      "contactPhone": "",
+      "menu": [
+        {
+          "id": "menu-1773250542341",
+          "name": "Cua",
+          "description": "",
+          "price": 100000,
+          "category": "Món chính",
+          "isAvailable": true
+        }
+      ],
+      "createdAt": "2026-03-11T17:34:33.616Z",
+      "updatedAt": "2026-03-11T17:35:42.389Z"
+    }
+  ],
+  "users": [
+    {
+      "_id": "69b1674ea9401221f043a6b3",
+      "email": "admin@karnel.com",
+      "password": "$2b$10$Jjs7g/M4KXENTThhrMJsSewh0/UX8LlcpYsYL8ZAPBF/Z2EKhBtzW",
+      "name": "Admin",
+      "role": "admin",
+      "isActive": true,
+      "createdAt": "2026-03-11T12:59:58.326Z",
+      "updatedAt": "2026-03-12T16:25:27.832Z",
+      "status": "active"
+    }
+  ],
+  "company_info": [],
+  "room_pricing": [
+    {
+      "_id": "69b1a3a9bac9aa3c1bd47ad7",
+      "roomId": "69b17a6ebac9aa3c1bd47ad3",
+      "date": "2026-03-12",
+      "price": 500,
+      "isSpecial": true,
+      "specialReason": "Giá đặc biệt"
+    }
+  ],
+  "promotions": [],
+  "rooms": [
+    {
+      "_id": "69b17a6ebac9aa3c1bd47ad3",
+      "hotelId": "69b17895bac9aa3c1bd47ad2",
+      "type": "Vip",
+      "description": "1",
+      "price": 100000,
+      "basePrice": 100000,
+      "available": 9,
+      "totalRooms": 9,
+      "maxGuests": 3,
+      "amenities": [
+        "WiFi",
+        "TV"
+      ],
+      "images": [],
+      "createdAt": "2026-03-11T14:21:34.669Z",
+      "updatedAt": "2026-03-11T14:21:34.669Z"
+    },
+    {
+      "_id": "69b17b76bac9aa3c1bd47ad4",
+      "hotelId": "69b17895bac9aa3c1bd47ad2",
+      "type": "1",
+      "description": "1",
+      "price": 10,
+      "basePrice": 10,
+      "available": 10,
+      "totalRooms": 10,
+      "maxGuests": 3,
+      "amenities": [
+        "WiFi",
+        "TV"
+      ],
+      "images": [],
+      "createdAt": "2026-03-11T14:25:58.861Z",
+      "updatedAt": "2026-03-11T14:25:58.861Z"
+    },
+    {
+      "_id": "69b17bc6bac9aa3c1bd47ad5",
+      "hotelId": "69b17895bac9aa3c1bd47ad2",
+      "type": "1",
+      "description": "1",
+      "price": 10,
+      "basePrice": 10,
+      "available": 10,
+      "totalRooms": 10,
+      "maxGuests": 3,
+      "amenities": [
+        "WiFi",
+        "TV"
+      ],
+      "images": [],
+      "createdAt": "2026-03-11T14:27:18.298Z",
+      "updatedAt": "2026-03-11T14:27:18.298Z"
+    }
+  ],
+  "resort_room_types": [
+    {
+      "_id": "69b1afe6bac9aa3c1bd47ada",
+      "resortId": "69b1ab27bac9aa3c1bd47ad9",
+      "name": "VIP",
+      "description": "",
+      "basePrice": 2,
+      "maxGuests": 4,
+      "totalRooms": 0,
+      "availableRooms": 0,
+      "amenities": [],
+      "images": [],
+      "pricing": [],
+      "availability": [],
+      "createdAt": "2026-03-11T18:09:42.705Z",
+      "updatedAt": "2026-03-11T18:09:42.705Z"
+    },
+    {
+      "_id": "69b1b000bac9aa3c1bd47adb",
+      "resortId": "69b1ab27bac9aa3c1bd47ad9",
+      "name": "VIP",
+      "description": "",
+      "basePrice": 12,
+      "maxGuests": 2,
+      "totalRooms": 12,
+      "availableRooms": 12,
+      "amenities": [],
+      "images": [],
+      "pricing": [],
+      "availability": [],
+      "createdAt": "2026-03-11T18:10:08.655Z",
+      "updatedAt": "2026-03-11T18:10:08.655Z"
+    }
+  ],
+  "transports": [
+    {
+      "_id": "69b2c3eef847fe8f38abc8b4",
+      "name": "1223",
+      "type": "bus",
+      "company": "minh minh",
+      "route": "ha noi → vung tau",
+      "departure": "ha noi",
+      "arrival": "vung tau",
+      "schedule": "",
+      "price": 100,
+      "capacity": 0,
+      "duration": "",
+      "contact": "",
+      "description": "",
+      "amenities": [],
+      "images": [
+        "blob:http://localhost:3000/1fc04f39-1074-442d-a563-fee318a2a532"
+      ],
+      "isActive": true,
+      "createdAt": "2026-03-12T13:47:26.366Z",
+      "updatedAt": "2026-03-12T15:33:18.266Z"
+    }
+  ],
+  "tourist_spots": [],
+  "room_availability": [],
+  "contact_details": [],
+  "resort_rooms": [],
+  "hotel_reviews": []
+}
