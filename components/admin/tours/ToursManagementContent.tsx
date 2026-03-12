@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Plane, 
@@ -20,6 +20,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import type { TourPackage } from '@/types/admin';
+import { TourFormModal } from './TourFormModal';
 
 interface ToursManagementContentProps {
   tours: TourPackage[];
@@ -31,7 +32,73 @@ export function ToursManagementContent({ tours: initialTours, isLoading }: Tours
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTours, setSelectedTours] = useState<string[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTour, setEditingTour] = useState<TourPackage | null>(null);
+  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const itemsPerPage = 10;
+
+  useEffect(() => {
+    setTours(initialTours);
+  }, [initialTours]);
+
+  const handleAddTour = () => {
+    setEditingTour(null);
+    setModalMode('add');
+    setIsModalOpen(true);
+  };
+
+  const handleEditTour = (tour: TourPackage) => {
+    setEditingTour(tour);
+    setModalMode('edit');
+    setIsModalOpen(true);
+  };
+
+  const handleSubmitTour = async (data: Partial<TourPackage>) => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      
+      if (modalMode === 'add') {
+        const response = await fetch(`${baseUrl}/api/admin/tours`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const result = await response.json();
+        if (result.success) {
+          setTours(prev => [result.data, ...prev]);
+        }
+      } else if (editingTour) {
+        const response = await fetch(`${baseUrl}/api/admin/tours/${editingTour.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const result = await response.json();
+        if (result.success) {
+          setTours(prev => prev.map(t => t.id === editingTour.id ? result.data : t));
+        }
+      }
+    } catch (error) {
+      console.error('Error submitting tour:', error);
+    }
+  };
+
+  const handleDeleteTour = async (id: string) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa tour này?')) return;
+    
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/api/admin/tours/${id}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json();
+      if (result.success) {
+        setTours(prev => prev.filter(t => t.id !== id));
+      }
+    } catch (error) {
+      console.error('Error deleting tour:', error);
+    }
+  };
 
   const filteredTours = tours.filter(tour => {
     const matchesSearch = tour.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -93,6 +160,10 @@ export function ToursManagementContent({ tours: initialTours, isLoading }: Tours
         </div>
         <Link 
           href="/admin/tours/new"
+          onClick={(e) => {
+            e.preventDefault();
+            handleAddTour();
+          }}
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
         >
           <Plus className="w-5 h-5" />
@@ -279,14 +350,15 @@ export function ToursManagementContent({ tours: initialTours, isLoading }: Tours
                       >
                         <Eye className="w-4 h-4" />
                       </Link>
-                      <Link
-                        href={`/admin/tours/${tour.id}/edit`}
+                      <button
+                        onClick={() => handleEditTour(tour)}
                         className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         title="Chỉnh sửa"
                       >
                         <Edit2 className="w-4 h-4" />
-                      </Link>
+                      </button>
                       <button
+                        onClick={() => handleDeleteTour(tour.id)}
                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Xóa"
                       >
@@ -341,6 +413,15 @@ export function ToursManagementContent({ tours: initialTours, isLoading }: Tours
           </div>
         )}
       </div>
+
+      {/* Tour Form Modal */}
+      <TourFormModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleSubmitTour}
+        tour={editingTour}
+        mode={modalMode}
+      />
     </div>
   );
 }

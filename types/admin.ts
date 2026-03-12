@@ -133,6 +133,11 @@ export interface Vehicle {
   price: number;
   images: string[];
   isActive: boolean;
+  contact?: string;
+  description?: string;
+  amenities?: string[];
+  capacity?: number;
+  duration?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -144,15 +149,17 @@ export interface TourPackage {
   duration: string;
   destinations: string[];
   price: number;
+  discount?: number;
   groupSize: number;
   startDates: string[];
-  includedServices: string[];
+  includes: string[];
   excludedServices: string[];
   itinerary: ItineraryDay[];
   images: string[];
   guideId?: string;
   isActive: boolean;
   bookingCount: number;
+  rating?: number;
   createdAt: string;
   updatedAt: string;
 }

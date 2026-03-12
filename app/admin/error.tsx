@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface DashboardErrorProps {
@@ -31,9 +31,8 @@ export default function DashboardError({ error, reset }: DashboardErrorProps) {
             <RefreshCw className="mr-2 h-4 w-4" />
             Thử lại
           </Button>
-          <Button onClick={() => window.location.href('/')} variant="outline">
-            <Home className="mr-2 h-4 w-4" />
-            Về trang chủ
+          <Button onClick={() => window.location.reload()} variant="outline">
+            Tải lại trang
           </Button>
         </div>
         {error.digest && (

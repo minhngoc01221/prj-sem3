@@ -16,10 +16,11 @@ import {
   Youtube,
   Link as LinkIcon,
   Menu,
-  Banner,
+  LayoutTemplate,
   Bell,
   Database,
-  Palette
+  Palette,
+  Download
 } from 'lucide-react';
 
 interface SettingsData {
@@ -83,7 +84,7 @@ export function SettingsContent({ settings: initialSettings, isLoading }: Settin
     { id: 'company', label: 'Thông tin công ty', icon: Building2 },
     { id: 'social', label: 'Mạng xã hội', icon: Globe },
     { id: 'navigation', label: 'Menu điều hướng', icon: Menu },
-    { id: 'banners', label: 'Banner trang chủ', icon: Banner },
+    { id: 'banners', label: 'LayoutTemplate trang chủ', icon: LayoutTemplate },
     { id: 'email', label: 'Cấu hình email', icon: Mail },
     { id: 'backup', label: 'Sao lưu dữ liệu', icon: Database },
   ];
@@ -325,7 +326,7 @@ export function SettingsContent({ settings: initialSettings, isLoading }: Settin
 
           {activeTab === 'banners' && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
-              <h2 className="text-lg font-semibold text-gray-900">Banner trang chủ</h2>
+              <h2 className="text-lg font-semibold text-gray-900">LayoutTemplate trang chủ</h2>
               <p className="text-gray-500">Quản lý các banner hiển thị trên trang chủ</p>
               
               <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center">

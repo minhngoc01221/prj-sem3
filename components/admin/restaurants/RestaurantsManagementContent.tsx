@@ -143,14 +143,14 @@ export function RestaurantsManagementContent({ restaurants: initialRestaurants, 
   // Fetch restaurant details
   const fetchRestaurantDetails = async (restaurant: Restaurant) => {
     try {
-      const data = await restaurantService.getRestaurantById(restaurant.id);
+      const data = await restaurantService.getRestaurantById(restaurant.id) as any;
       setSelectedRestaurant({
         ...data,
         id: data._id?.toString() || data.id,
       } as Restaurant);
       setRestaurantReviews(data.reviews || []);
       setRestaurantBookings(data.bookings || []);
-      setMenuItems((data as any).menu || []);
+      setMenuItems(data.menu || []);
     } catch (error) {
       console.error('Error fetching restaurant details:', error);
       showNotification('error', 'Không thể tải thông tin chi tiết');
@@ -221,10 +221,8 @@ export function RestaurantsManagementContent({ restaurants: initialRestaurants, 
       priceRange: 'medium',
       style: 'restaurant',
       openingHours: '07:00 - 22:00',
-      closingHours: '22:00',
       images: [],
       contactPhone: '',
-      menu: [],
       isActive: true,
     });
     setFormMode('add');

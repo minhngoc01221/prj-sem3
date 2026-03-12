@@ -120,8 +120,8 @@ export function SpotsManagementContent({ spots: initialSpots, isLoading: initial
   const handleFormSubmit = async (data: Partial<TouristSpot>) => {
     if (formMode === 'add') {
       const newSpot: TouristSpot = {
-        id: String(Date.now()),
         ...data as TouristSpot,
+        id: String(Date.now()),
         rating: 0,
         reviewCount: 0,
         tourCount: 0,
