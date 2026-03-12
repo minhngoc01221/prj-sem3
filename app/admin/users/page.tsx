@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { UsersManagementContent } from '@/components/admin/users/UsersManagementContent';
+import { UsersManagementContent } from '@/components/features/admin/users/UsersManagementContent';
 import UsersLoading from './loading';
 import type { User } from '@/types/admin';
 

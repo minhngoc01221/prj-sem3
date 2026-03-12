@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, MapPin, Clock, DollarSign, Calendar, Check, Plus } from 'lucide-react';
 import type { TourPackage } from '@/types/admin';
-import { TourFormModal } from '@/components/admin/tours/TourFormModal';
+import { TourFormModal } from '@/components/features/admin/tours/TourFormModal';
 
 interface NewTourPageProps {
   params: Promise<{}>;

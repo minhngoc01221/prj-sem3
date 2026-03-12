@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { SpotsManagementContent } from '@/components/admin/spots/SpotsManagementContent';
+import { SpotsManagementContent } from '@/components/features/admin/spots/SpotsManagementContent';
 import SpotsLoading from './loading';
 import type { TouristSpot } from '@/types/admin';
 

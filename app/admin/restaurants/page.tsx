@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { RestaurantsManagementContent } from '@/components/admin/restaurants/RestaurantsManagementContent';
+import { RestaurantsManagementContent } from '@/components/features/admin/restaurants/RestaurantsManagementContent';
 import RestaurantsLoading from './loading';
 import type { Restaurant } from '@/types/admin';
 

@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { BookingsManagementContent } from '@/components/admin/bookings/BookingsManagementContent';
+import { BookingsManagementContent } from '@/components/features/admin/bookings/BookingsManagementContent';
 import BookingsLoading from './loading';
 import type { Booking } from '@/types/admin';
 

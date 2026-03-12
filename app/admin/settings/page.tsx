@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { SettingsContent } from '@/components/admin/settings/SettingsContent';
+import { SettingsContent } from '@/components/features/admin/settings/SettingsContent';
 import SettingsLoading from './loading';
 
 async function getSettings() {

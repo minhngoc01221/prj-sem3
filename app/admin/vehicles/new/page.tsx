@@ -15,7 +15,7 @@ import {
   Plus
 } from 'lucide-react';
 import type { Vehicle } from '@/types/admin';
-import { VehicleFormModal } from '@/components/admin/vehicles/VehicleFormModal';
+import { VehicleFormModal } from '@/components/features/admin/vehicles/VehicleFormModal';
 
 interface NewVehiclePageProps {
   params: Promise<{}>;

@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { PromotionsManagementContent } from '@/components/admin/promotions/PromotionsManagementContent';
+import { PromotionsManagementContent } from '@/components/features/admin/promotions/PromotionsManagementContent';
 import PromotionsLoading from './loading';
 import type { Promotion } from '@/types/admin';
 

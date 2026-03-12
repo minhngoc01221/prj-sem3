@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { ToursManagementContent } from '@/components/admin/tours/ToursManagementContent';
+import { ToursManagementContent } from '@/components/features/admin/tours/ToursManagementContent';
 import ToursLoading from './loading';
 import type { TourPackage } from '@/types/admin';
 

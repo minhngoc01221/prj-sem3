@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { DashboardContent } from '@/components/admin/dashboard/DashboardContent';
+import { DashboardContent } from '@/components/features/admin/dashboard/DashboardContent';
 import DashboardLoading from './loading';
 import type { DashboardStats, RevenueChartData, RecentBooking, ContactAlert, Notification } from '@/types/dashboard';
 

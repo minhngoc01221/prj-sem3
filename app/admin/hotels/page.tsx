@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { HotelsManagementContent } from '@/components/admin/hotels/HotelsManagementContent';
+import { HotelsManagementContent } from '@/components/features/admin/hotels/HotelsManagementContent';
 import HotelsLoading from './loading';
 import type { Hotel } from '@/types/admin';
 

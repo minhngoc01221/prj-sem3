@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { ContactsManagementContent } from '@/components/admin/contacts/ContactsManagementContent';
+import { ContactsManagementContent } from '@/components/features/admin/contacts/ContactsManagementContent';
 import ContactsLoading from './loading';
 import type { Contact } from '@/types/admin';
 

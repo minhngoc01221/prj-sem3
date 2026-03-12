@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { VehiclesManagementContent } from '@/components/admin/vehicles/VehiclesManagementContent';
+import { VehiclesManagementContent } from '@/components/features/admin/vehicles/VehiclesManagementContent';
 import VehiclesLoading from './loading';
 import type { Vehicle } from '@/types/admin';
 

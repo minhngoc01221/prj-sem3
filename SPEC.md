@@ -79,7 +79,7 @@ Trang giới thiệu cung cấp thông tin chi tiết về công ty, lịch sử
 ### 2.3. Trang Tìm kiếm (Search Page)
 
 #### 2.3.1. Mô tả chức năng
-Trang tìm kiếm cho phép người dùng tìm kiếm các điểm du lịch, khách sạn, nhà hàng và resort dựa trên nhiều tiêu chí khác nhau.
+Trang tìm kiếm cho phép người dùng tìm kiếm các điểm du lịch, khách sạn, nhà hàng, resort, tour du lịch và phương tiện vận chuyển dựa trên nhiều tiêu chí khác nhau.
 
 #### 2.3.2. Các yêu cầu cụ thể
 | STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
@@ -104,6 +104,20 @@ Trang tìm kiếm cho phép người dùng tìm kiếm các điểm du lịch, k
 | F038 | F-SEARCH-018 | Liên kết đến trang tìm kiếm nâng cao (Advanced Search) | Cao |
 | F039 | F-SEARCH-019 | Lưu lịch sử tìm kiếm gần đây | Trung bình |
 | F040 | F-SEARCH-020 | Gợi ý tìm kiếm khi người dùng nhập liệu (autocomplete) | Trung bình |
+| F051 | F-SEARCH-021 | Tìm kiếm tour du lịch theo tên/điểm đến | Cao |
+| F052 | F-SEARCH-022 | Tìm kiếm tour theo khoảng giá | Cao |
+| F053 | F-SEARCH-023 | Tìm kiếm tour theo số ngày (thời gian) | Cao |
+| F054 | F-SEARCH-024 | Tìm kiếm tour theo ngày khởi hành | Cao |
+| F055 | F-SEARCH-025 | Tìm kiếm tour theo điểm đến (destinations) | Cao |
+| F056 | F-SEARCH-026 | Tìm kiếm phương tiện theo tuyến đường (điểm đi - điểm đến) | Cao |
+| F057 | F-SEARCH-027 | Tìm kiếm phương tiện theo loại (máy bay, xe khách, tàu hỏa, thuê xe, limousine) | Cao |
+| F058 | F-SEARCH-028 | Tìm kiếm phương tiện theo mức giá | Cao |
+| F059 | F-SEARCH-029 | Tìm kiếm phương tiện theo nhà xe/hãng vận chuyển | Cao |
+| F060 | F-SEARCH-030 | Tìm kiếm phương tiện theo thời gian di chuyển | Trung bình |
+| F061 | F-SEARCH-031 | Hiển thị kết quả tìm kiếm tour du lịch | Cao |
+| F062 | F-SEARCH-032 | Hiển thị kết quả tìm kiếm phương tiện vận chuyển | Cao |
+| F063 | F-SEARCH-033 | Tab chuyển đổi giữa các loại tìm kiếm (Spot/Hotel/Restaurant/Resort/Tour/Transport) | Cao |
+| F064 | F-SEARCH-034 | Tìm kiếm kết hợp nhiều loại cùng lúc (All) | Cao |
 
 ---
 
@@ -119,6 +133,11 @@ Trang tìm kiếm cho phép người dùng tìm kiếm các điểm du lịch, k
 | F046 | F-ADV-006 | Tìm kiếm theo số lượng người/lượng phòng | Trung bình |
 | F047 | F-ADV-007 | Lưu tiêu chí tìm kiếm để sử dụng lại | Thấp |
 | F048 | F-ADV-008 | So sánh các lựa chọn (compare feature) | Thấp |
+| F065 | F-ADV-009 | Tìm kiếm tour nâng cao (kết hợp điểm đến, ngày, giá) | Cao |
+| F066 | F-ADV-010 | Tìm kiếm phương tiện nâng cao (kết hợp tuyến, giờ, giá) | Cao |
+| F067 | F-ADV-011 | Tìm kiếm kết hợp tour + khách sạn + vận chuyển | Cao |
+| F068 | F-ADV-012 | Lọc theo khuyến mãi hiện có | Trung bình |
+| F069 | F-ADV-013 | Tìm kiếm theo ngân sách tổng thể | Trung bình |
 
 ---
 
@@ -271,12 +290,68 @@ Trang liên hệ cho phép khách hàng đặt dịch vụ, gửi yêu cầu tư
 
 ---
 
-## 2.6. Trang Quản trị (Admin Panel)
+### 2.6. Trang Đặt dịch vụ (Booking Page)
 
 #### 2.6.1. Mô tả chức năng
-Trang quản trị (Admin Panel) là nơi để quản lý toàn bộ nội dung và dữ liệu của website. Chỉ có người dùng có quyền quản trị (admin) mới có thể truy cập.
+Trang đặt dịch vụ cho phép người dùng đặt tour, đặt phòng khách sạn/resort, đặt vé phương tiện.
 
 #### 2.6.2. Các yêu cầu cụ thể
+| STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
+|-----|------------|---------------|-------------|
+| F300 | F-BOOK-001 | Đặt tour du lịch trọn gói | Cao |
+| F301 | F-BOOK-002 | Đặt phòng khách sạn | Cao |
+| F302 | F-BOOK-003 | Đặt phòng resort | Cao |
+| F303 | F-BOOK-004 | Đặt vé phương tiện vận chuyển | Cao |
+| F304 | F-BOOK-005 | Chọn ngày khởi hành | Cao |
+| F305 | F-BOOK-006 | Chọn số lượng người tham gia | Cao |
+| F306 | F-BOOK-007 | Chọn loại phòng/giường | Cao |
+| F307 | F-BOOK-008 | Tính toán tổng tiền tự động | Cao |
+| F308 | F-BOOK-009 | Áp dụng mã giảm giá/khuyến mãi | Cao |
+| F309 | F-BOOK-010 | Xác nhận thông tin đặt trước thanh toán | Cao |
+| F310 | F-BOOK-011 | Thanh toán trực tuyến (VNPay, MoMo, chuyển khoản) | Cao |
+| F311 | F-BOOK-012 | Thanh toán tại quầy/tiền mặt | Cao |
+| F312 | F-BOOK-013 | Gửi email xác nhận đơn đặt | Cao |
+| F313 | F-BOOK-014 | Gửi SMS xác nhận đơn đặt | Trung bình |
+| F314 | F-BOOK-015 | Xem lịch sử đơn đặt | Cao |
+| F315 | F-BOOK-016 | Hủy đơn đặt | Cao |
+| F316 | F-BOOK-017 | Yêu cầu đổi ngày/hủy đơn | Cao |
+| F317 | F-BOOK-018 | Hiển thị chính sách hủy/đổi | Cao |
+| F318 | F-BOOK-019 | Đặt nhiều dịch vụ cùng lúc (combo) | Trung bình |
+| F319 | F-BOOK-020 | Tính năng giữ chỗ tạm thời | Trung bình |
+
+---
+
+### 2.7. Trang Tài khoản người dùng (User Account)
+
+#### 2.7.1. Mô tả chức năng
+Trang quản lý tài khoản người dùng bao gồm đăng nhập, đăng ký, quên mật khẩu và thông tin cá nhân.
+
+#### 2.7.2. Các yêu cầu cụ thể
+| STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
+|-----|------------|---------------|-------------|
+| F320 | F-USER-001 | Đăng ký tài khoản mới (email/password) | Cao |
+| F321 | F-USER-002 | Đăng nhập | Cao |
+| F322 | F-USER-003 | Đăng nhập bằng Google/Facebook | Trung bình |
+| F323 | F-USER-004 | Quên mật khẩu | Cao |
+| F324 | F-USER-005 | Đặt lại mật khẩu | Cao |
+| F325 | F-USER-006 | Xác thực email | Cao |
+| F326 | F-USER-007 | Cập nhật thông tin cá nhân | Cao |
+| F327 | F-USER-008 | Thay đổi mật khẩu | Cao |
+| F328 | F-USER-009 | Upload avatar/hình đại diện | Trung bình |
+| F329 | F-USER-010 | Xem lịch sử đơn đặt | Cao |
+| F330 | F-USER-011 | Lưu danh sách yêu thích | Cao |
+| F331 | F-USER-012 | Quản lý địa chỉ giao hàng/nhận phòng | Trung bình |
+| F332 | F-USER-013 | Đăng xuất | Cao |
+| F333 | F-USER-014 | Xóa tài khoản | Trung bình |
+
+---
+
+## 2.8. Trang Quản trị (Admin Panel)
+
+#### 2.8.1. Mô tả chức năng
+Trang quản trị (Admin Panel) là nơi để quản lý toàn bộ nội dung và dữ liệu của website. Chỉ có người dùng có quyền quản trị (admin) mới có thể truy cập.
+
+#### 2.8.2. Các yêu cầu cụ thể
 | STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
 |-----|------------|---------------|-------------|
 | F141 | F-ADMIN-001 | Đăng nhập admin với email và mật khẩu | Cao |
@@ -300,7 +375,7 @@ Trang quản trị (Admin Panel) là nơi để quản lý toàn bộ nội dung
 | F159 | F-ADMIN-019 | Phân quyền người dùng (admin, moderator, staff) | Cao |
 | F160 | F-ADMIN-020 | Đăng xuất admin | Cao |
 
-#### 2.6.3. Trang Dashboard Admin
+#### 2.8.3. Trang Dashboard Admin
 
 | STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
 |-----|------------|---------------|-------------|
@@ -315,7 +390,22 @@ Trang quản trị (Admin Panel) là nơi để quản lý toàn bộ nội dung
 | F169 | F-DASH-009 | Hiển thị danh sách liên hệ chưa đọc | Cao |
 | F170 | F-DASH-010 | Thông báo khi có đơn đặt mới | Trung bình |
 
-#### 2.6.4. Trang Quản lý Điểm du lịch (Admin Tourist Spots)
+#### 2.8.4. Trang Quản lý Điểm du lịch (Admin Tourist Spots)
+
+| STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
+|-----|------------|---------------|-------------|
+| F161 | F-DASH-001 | Hiển thị tổng số điểm du lịch | Cao |
+| F162 | F-DASH-002 | Hiển thị tổng số khách sạn | Cao |
+| F163 | F-DASH-003 | Hiển thị tổng số nhà hàng | Cao |
+| F164 | F-DASH-004 | Hiển thị tổng số resort | Cao |
+| F165 | F-DASH-005 | Hiển thị tổng số đơn đặt trong ngày | Cao |
+| F166 | F-DASH-006 | Hiển thị tổng doanh thu trong tháng | Cao |
+| F167 | F-DASH-007 | Hiển thị danh sách đơn đặt gần đây | Cao |
+| F168 | F-DASH-008 | Hiển thị biểu đồ thống kê doanh thu theo tháng | Cao |
+| F169 | F-DASH-009 | Hiển thị danh sách liên hệ chưa đọc | Cao |
+| F170 | F-DASH-010 | Thông báo khi có đơn đặt mới | Trung bình |
+
+#### 2.8.4. Trang Quản lý Điểm du lịch (Admin Tourist Spots)
 
 | STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
 |-----|------------|---------------|-------------|
@@ -330,7 +420,7 @@ Trang quản trị (Admin Panel) là nơi để quản lý toàn bộ nội dung
 | F179 | F-ASPOT-009 | Xem số lượng đặt tour liên quan | Trung bình |
 | F180 | F-ASPOT-010 | Thay đổi trạng thái hiển thị | Cao |
 
-#### 2.6.5. Trang Quản lý Khách sạn (Admin Hotels)
+#### 2.8.5. Trang Quản lý Khách sạn (Admin Hotels)
 
 | STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
 |-----|------------|---------------|-------------|
@@ -345,7 +435,7 @@ Trang quản trị (Admin Panel) là nơi để quản lý toàn bộ nội dung
 | F189 | F-AHOTEL-009 | Thay đổi trạng thái (hoạt động/không hoạt động) | Cao |
 | F190 | F-AHOTEL-010 | Xem đánh giá từ khách | Cao |
 
-#### 2.6.6. Trang Quản lý Đơn đặt (Admin Bookings)
+#### 2.8.6. Trang Quản lý Đơn đặt (Admin Bookings)
 
 | STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
 |-----|------------|---------------|-------------|
@@ -360,7 +450,7 @@ Trang quản trị (Admin Panel) là nơi để quản lý toàn bộ nội dung
 | F199 | F-ABOOK-009 | Xuất danh sách đơn đặt | Trung bình |
 | F200 | F-ABOOK-010 | Thống kê doanh thu theo đơn | Cao |
 
-#### 2.6.7. Trang Quản lý Khuyến mãi (Admin Promotions)
+#### 2.8.7. Trang Quản lý Khuyến mãi (Admin Promotions)
 
 | STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
 |-----|------------|---------------|-------------|
@@ -375,7 +465,7 @@ Trang quản trị (Admin Panel) là nơi để quản lý toàn bộ nội dung
 | F209 | F-APROMO-009 | Hiển thị trên trang chủ (show on home) | Cao |
 | F210 | F-APROMO-010 | Tự động hết hạn khi đến ngày kết thúc | Cao |
 
-#### 2.6.8. Trang Quản lý Liên hệ (Admin Contacts)
+#### 2.8.8. Trang Quản lý Liên hệ (Admin Contacts)
 
 | STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
 |-----|------------|---------------|-------------|
@@ -388,7 +478,7 @@ Trang quản trị (Admin Panel) là nơi để quản lý toàn bộ nội dung
 | F217 | F-ACONTACT-007 | Tìm kiếm tin nhắn | Cao |
 | F218 | F-ACONTACT-008 | Xuất danh sách liên hệ | Trung bình |
 
-#### 2.6.9. Trang Quản lý Người dùng (Admin Users)
+#### 2.8.9. Trang Quản lý Người dùng (Admin Users)
 
 | STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
 |-----|------------|---------------|-------------|
@@ -401,7 +491,7 @@ Trang quản trị (Admin Panel) là nơi để quản lý toàn bộ nội dung
 | F225 | F-AUSER-007 | Kích hoạt/vô hiệu hóa tài khoản | Cao |
 | F226 | F-AUSER-008 | Xem lịch sử đơn đặt của người dùng | Cao |
 
-#### 2.6.10. Trang Cài đặt (Admin Settings)
+#### 2.8.10. Trang Cài đặt (Admin Settings)
 
 | STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
 |-----|------------|---------------|-------------|
@@ -414,7 +504,7 @@ Trang quản trị (Admin Panel) là nơi để quản lý toàn bộ nội dung
 | F233 | F-ASET-007 | Cấu hình email gửi tự động | Trung bình |
 | F234 | F-ASET-008 | Sao lưu dữ liệu | Trung bình |
 
-#### 2.6.11. Trang Quản lý Phương tiện (Admin Vehicles/Transports)
+#### 2.8.11. Trang Quản lý Phương tiện (Admin Vehicles/Transports)
 
 | STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
 |-----|------------|---------------|-------------|
@@ -430,7 +520,7 @@ Trang quản trị (Admin Panel) là nơi để quản lý toàn bộ nội dung
 | F244 | F-AVEH-010 | Thay đổi trạng thái (hoạt động/không hoạt động) | Cao |
 | F245 | F-AVEH-011 | Quản lý nhà xe/hãng vận chuyển | Cao |
 
-#### 2.6.12. Trang Quản lý Tour (Admin Tours)
+#### 2.8.12. Trang Quản lý Tour (Admin Tours)
 
 | STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
 |-----|------------|---------------|-------------|
@@ -448,7 +538,7 @@ Trang quản trị (Admin Panel) là nơi để quản lý toàn bộ nội dung
 | F257 | F-ATOUR-012 | Xem số lượng đặt tour | Cao |
 | F258 | F-ATOUR-013 | Quản lý hướng dẫn viên du lịch | Trung bình |
 
-#### 2.6.13. Trang Quản lý Nhà hàng (Admin Restaurants)
+#### 2.8.13. Trang Quản lý Nhà hàng (Admin Restaurants)
 
 | STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
 |-----|------------|---------------|-------------|
@@ -466,7 +556,7 @@ Trang quản trị (Admin Panel) là nơi để quản lý toàn bộ nội dung
 | F270 | F-AREST-012 | Quản lý mức giá (bình dân, trung cấp, cao cấp) | Cao |
 | F271 | F-AREST-013 | Tìm kiếm và lọc nhà hàng | Cao |
 
-#### 2.6.14. Trang Quản lý Resort (Admin Resorts)
+#### 2.8.14. Trang Quản lý Resort (Admin Resorts)
 
 | STT | Mã yêu cầu | Mô tả yêu cầu | Độ ưu tiên |
 |-----|------------|---------------|-------------|
