@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Users, 
@@ -17,9 +17,15 @@ import {
   ShieldCheck,
   UserCheck,
   UserX,
-  Key
+  Key,
+  ShoppingBag,
+  Loader2
 } from 'lucide-react';
 import type { User } from '@/types/admin';
+import { UserFormModal } from './UserFormModal';
+import { PasswordChangeModal } from './PasswordChangeModal';
+import { OrderHistoryModal } from './OrderHistoryModal';
+import { DeleteConfirmModal } from './DeleteConfirmModal';
 
 interface UsersManagementContentProps {
   users: User[];
@@ -39,16 +45,41 @@ const roleColors = {
 };
 
 export function UsersManagementContent({ users: initialUsers, isLoading }: UsersManagementContentProps) {
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // Modal states
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
+  
+  // Selected user for actions
+  const [selectedUserForPassword, setSelectedUserForPassword] = useState<{ id: string; name: string } | null>(null);
+  const [selectedUserForOrders, setSelectedUserForOrders] = useState<User | null>(null);
+  const [selectedUserForDelete, setSelectedUserForDelete] = useState<User | null>(null);
+
+  // Toast state
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  useEffect(() => {
+    setUsers(initialUsers || []);
+  }, [initialUsers]);
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
     const matchesStatus = statusFilter === 'all' || 
       (statusFilter === 'active' && user.status === 'active') || 
@@ -62,10 +93,116 @@ export function UsersManagementContent({ users: initialUsers, isLoading }: Users
     currentPage * itemsPerPage
   );
 
-  const handleToggleStatus = (id: string) => {
-    setUsers(prev => prev.map(u => 
-      u.id === id ? { ...u, status: u.status === 'active' ? 'inactive' : 'active' } : u
-    ));
+  // Handlers
+  const handleAddUser = () => {
+    setEditingUser(null);
+    setModalMode('add');
+    setIsFormModalOpen(true);
+  };
+
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    setModalMode('edit');
+    setIsFormModalOpen(true);
+  };
+
+  const handleSubmitUser = async (data: Partial<User>) => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      
+      if (modalMode === 'add') {
+        const response = await fetch(`${baseUrl}/api/admin/users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const result = await response.json();
+        if (result.success) {
+          setUsers(prev => [result.data, ...prev]);
+          showToast('success', 'Thêm người dùng thành công!');
+        } else {
+          showToast('error', result.message || 'Thêm người dùng thất bại');
+        }
+      } else if (editingUser) {
+        const response = await fetch(`${baseUrl}/api/admin/users/${editingUser.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const result = await response.json();
+        if (result.success) {
+          setUsers(prev => prev.map(u => u.id === editingUser.id ? result.data : u));
+          showToast('success', 'Cập nhật người dùng thành công!');
+        } else {
+          showToast('error', result.message || 'Cập nhật thất bại');
+        }
+      }
+    } catch (error) {
+      console.error('Error submitting user:', error);
+      showToast('error', 'Đã xảy ra lỗi. Vui lòng thử lại.');
+    }
+  };
+
+  const handleChangePassword = async (newPassword: string) => {
+    // In real app, call API to change password
+    showToast('success', 'Đổi mật khẩu thành công!');
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUserForDelete) return;
+    
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/api/admin/users/${selectedUserForDelete.id}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json();
+      if (result.success) {
+        setUsers(prev => prev.filter(u => u.id !== selectedUserForDelete.id));
+        showToast('success', 'Xóa người dùng thành công!');
+      } else {
+        showToast('error', result.message || 'Xóa người dùng thất bại');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      showToast('error', 'Đã xảy ra lỗi. Vui lòng thử lại.');
+    }
+  };
+
+  const handleToggleStatus = async (user: User) => {
+    const newStatus = user.status === 'active' ? 'inactive' : 'active';
+    
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/api/admin/users/${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        setUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: newStatus } : u));
+        showToast('success', newStatus === 'active' ? 'Đã kích hoạt tài khoản!' : 'Đã vô hiệu hóa tài khoản!');
+      }
+    } catch (error) {
+      console.error('Error toggling status:', error);
+      showToast('error', 'Đã xảy ra lỗi.');
+    }
+  };
+
+  const handleOpenOrderHistory = (user: User) => {
+    setSelectedUserForOrders(user);
+    setIsOrderHistoryOpen(true);
+  };
+
+  const handleOpenPasswordModal = (user: User) => {
+    setSelectedUserForPassword({ id: user.id, name: user.name });
+    setIsPasswordModalOpen(true);
+  };
+
+  const handleOpenDeleteModal = (user: User) => {
+    setSelectedUserForDelete(user);
+    setIsDeleteModalOpen(true);
   };
 
   if (isLoading) {
@@ -88,19 +225,29 @@ export function UsersManagementContent({ users: initialUsers, isLoading }: Users
 
   return (
     <div className="space-y-6">
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg ${
+          toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        }`}>
+          {toast.type === 'success' ? <Check className="w-5 h-5" /> : <X className="w-5 h-5" />}
+          {toast.message}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Quản lý người dùng</h1>
           <p className="text-gray-500 mt-1">Quản lý tài khoản người dùng và phân quyền</p>
         </div>
-        <Link 
-          href="/admin/users/new"
+        <button 
+          onClick={handleAddUser}
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
         >
           <Plus className="w-5 h-5" />
           Thêm người dùng
-        </Link>
+        </button>
       </div>
 
       {/* Stats */}
@@ -215,7 +362,7 @@ export function UsersManagementContent({ users: initialUsers, isLoading }: Users
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-medium">
-                        {user.name.charAt(0).toUpperCase()}
+                        {user.name?.charAt(0).toUpperCase() || 'U'}
                       </div>
                       <div>
                         <p className="font-medium text-gray-900">{user.name}</p>
@@ -233,7 +380,7 @@ export function UsersManagementContent({ users: initialUsers, isLoading }: Users
                   </td>
                   <td className="px-6 py-4">
                     <button
-                      onClick={() => handleToggleStatus(user.id)}
+                      onClick={() => handleToggleStatus(user)}
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium ${
                         user.status === 'active' 
                           ? 'bg-green-100 text-green-700 hover:bg-green-200' 
@@ -254,13 +401,20 @@ export function UsersManagementContent({ users: initialUsers, isLoading }: Users
                     </button>
                   </td>
                   <td className="px-6 py-4 text-gray-600">
-                    {new Date(user.createdAt).toLocaleDateString('vi-VN')}
+                    {user.createdAt ? new Date(user.createdAt).toLocaleDateString('vi-VN') : '-'}
                   </td>
                   <td className="px-6 py-4 text-gray-600">
                     {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('vi-VN') : '-'}
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleOpenOrderHistory(user)}
+                        className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                        title="Lịch sử đơn hàng"
+                      >
+                        <ShoppingBag className="w-4 h-4" />
+                      </button>
                       <Link
                         href={`/admin/users/${user.id}`}
                         className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -268,21 +422,22 @@ export function UsersManagementContent({ users: initialUsers, isLoading }: Users
                       >
                         <Eye className="w-4 h-4" />
                       </Link>
-                      <Link
-                        href={`/admin/users/${user.id}/edit`}
+                      <button
+                        onClick={() => handleEditUser(user)}
                         className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         title="Chỉnh sửa"
                       >
                         <Edit2 className="w-4 h-4" />
-                      </Link>
-                      <Link
-                        href={`/admin/users/${user.id}/password`}
+                      </button>
+                      <button
+                        onClick={() => handleOpenPasswordModal(user)}
                         className="p-2 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
                         title="Đổi mật khẩu"
                       >
                         <Key className="w-4 h-4" />
-                      </Link>
+                      </button>
                       <button
+                        onClick={() => handleOpenDeleteModal(user)}
                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Xóa"
                       >
@@ -337,6 +492,38 @@ export function UsersManagementContent({ users: initialUsers, isLoading }: Users
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      <UserFormModal
+        isOpen={isFormModalOpen}
+        onClose={() => setIsFormModalOpen(false)}
+        onSubmit={handleSubmitUser}
+        user={editingUser}
+        mode={modalMode}
+      />
+
+      <PasswordChangeModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+        userId={selectedUserForPassword?.id || ''}
+        userName={selectedUserForPassword?.name || ''}
+      />
+
+      <OrderHistoryModal
+        isOpen={isOrderHistoryOpen}
+        onClose={() => setIsOrderHistoryOpen(false)}
+        userId={selectedUserForOrders?.id || ''}
+        userName={selectedUserForOrders?.name || ''}
+      />
+
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteUser}
+        title="Xóa người dùng"
+        message="Bạn có chắc chắn muốn xóa người dùng này? Hành động này không thể hoàn tác."
+        itemName={selectedUserForDelete?.name}
+      />
     </div>
   );
 }

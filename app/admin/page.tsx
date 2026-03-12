@@ -3,6 +3,8 @@ import { DashboardContent } from '@/components/admin/dashboard/DashboardContent'
 import DashboardLoading from './loading';
 import type { DashboardStats, RevenueChartData, RecentBooking, ContactAlert, Notification } from '@/types/dashboard';
 
+export const dynamic = 'force-dynamic';
+
 async function getDashboardStats(): Promise<DashboardStats | null> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';

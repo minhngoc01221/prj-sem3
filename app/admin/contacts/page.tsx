@@ -3,6 +3,8 @@ import { ContactsManagementContent } from '@/components/admin/contacts/ContactsM
 import ContactsLoading from './loading';
 import type { Contact } from '@/types/admin';
 
+export const dynamic = 'force-dynamic';
+
 async function getContacts(): Promise<Contact[]> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';

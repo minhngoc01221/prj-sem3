@@ -3,6 +3,8 @@ import { BookingsManagementContent } from '@/components/admin/bookings/BookingsM
 import BookingsLoading from './loading';
 import type { Booking } from '@/types/admin';
 
+export const dynamic = 'force-dynamic';
+
 async function getBookings(): Promise<Booking[]> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
