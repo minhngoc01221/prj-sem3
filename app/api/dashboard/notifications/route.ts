@@ -1,23 +1,27 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import client, { getDb } from '@/lib/mongodb';
 import type { NotificationsResponse, ApiResponse } from '@/types/dashboard';
 
 export async function GET(): Promise<NextResponse<ApiResponse<NotificationsResponse>>> {
   try {
-    const recentContacts = await prisma.contact.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-    });
+    await client.connect();
+    const db = getDb();
+    
+    const contactsCollection = db.collection('contacts');
+    
+    const recentContacts = await contactsCollection
+      .find({})
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .toArray();
 
-    const pendingCount = await prisma.contact.count({
-      where: { status: 'pending' },
-    });
+    const pendingCount = await contactsCollection.countDocuments({ status: 'pending' });
 
     const notifications = recentContacts.map((contact, index) => ({
-      id: contact.id,
+      id: contact._id?.toString() || '',
       type: 'contact' as const,
       title: contact.serviceType ? `Yêu cầu: ${contact.serviceType}` : 'Liên hệ mới',
-      message: `${contact.fullName}: ${contact.message.slice(0, 50)}...`,
+      message: `${contact.fullName || contact.name}: ${contact.message.slice(0, 50)}...`,
       isRead: contact.status !== 'pending' || index > 0,
       createdAt: contact.createdAt,
     }));
@@ -34,5 +38,7 @@ export async function GET(): Promise<NextResponse<ApiResponse<NotificationsRespo
       { success: false, error: 'Failed to fetch notifications' },
       { status: 500 }
     );
+  } finally {
+    await client.close();
   }
 }

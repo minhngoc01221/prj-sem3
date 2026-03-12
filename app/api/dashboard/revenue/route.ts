@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import client, { getDb } from '@/lib/mongodb';
 import type { RevenueChartData, ApiResponse } from '@/types/dashboard';
 
 export async function GET(): Promise<NextResponse<ApiResponse<RevenueChartData>>> {
   try {
+    await client.connect();
+    const db = getDb();
+    
+    const contactsCollection = db.collection('contacts');
+    
     const now = new Date();
     const months: { month: string; startDate: Date; endDate: Date }[] = [];
 
@@ -16,12 +21,10 @@ export async function GET(): Promise<NextResponse<ApiResponse<RevenueChartData>>
 
     const contactsData = await Promise.all(
       months.map(async ({ startDate, endDate }) => {
-        const count = await prisma.contact.count({
-          where: {
-            createdAt: {
-              gte: startDate,
-              lte: endDate,
-            },
+        const count = await contactsCollection.countDocuments({
+          createdAt: {
+            $gte: startDate,
+            $lte: endDate,
           },
         });
         return count;
@@ -51,5 +54,7 @@ export async function GET(): Promise<NextResponse<ApiResponse<RevenueChartData>>
       { success: false, error: 'Failed to fetch revenue data' },
       { status: 500 }
     );
+  } finally {
+    await client.close();
   }
 }

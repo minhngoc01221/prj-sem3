@@ -1,25 +1,24 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import client, { getDb } from '@/lib/mongodb';
 import type { ContactAlertsResponse, ApiResponse } from '@/types/dashboard';
 
 export async function GET(): Promise<NextResponse<ApiResponse<ContactAlertsResponse>>> {
   try {
-    const contacts = await prisma.contact.findMany({
-      where: {
-        status: 'pending',
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-    });
+    await client.connect();
+    const db = getDb();
+    
+    const contactsCollection = db.collection('contacts');
+    
+    const contacts = await contactsCollection
+      .find({ status: 'pending' })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .toArray();
 
-    const unreadCount = await prisma.contact.count({
-      where: {
-        status: 'pending',
-      },
-    });
+    const unreadCount = await contactsCollection.countDocuments({ status: 'pending' });
 
     const alerts = contacts.map((contact) => ({
-      id: contact.id,
+      id: contact._id?.toString() || '',
       fullName: contact.fullName,
       email: contact.email,
       phone: contact.phone,
@@ -40,5 +39,7 @@ export async function GET(): Promise<NextResponse<ApiResponse<ContactAlertsRespo
       { success: false, error: 'Failed to fetch contact alerts' },
       { status: 500 }
     );
+  } finally {
+    await client.close();
   }
 }

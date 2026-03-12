@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import client, { getDb } from '@/lib/mongodb';
 import type { DashboardStats, ApiResponse } from '@/types/dashboard';
 
 export async function GET(): Promise<NextResponse<ApiResponse<DashboardStats>>> {
   try {
+    await client.connect();
+    const db = getDb();
+    
     const [
       touristSpotsCount,
       hotelsCount,
@@ -12,17 +15,15 @@ export async function GET(): Promise<NextResponse<ApiResponse<DashboardStats>>> 
       contactsCount,
       lastMonthContactsCount,
     ] = await Promise.all([
-      prisma.touristSpot.count(),
-      prisma.hotel.count(),
-      prisma.restaurant.count(),
-      prisma.resort.count(),
-      prisma.contact.count(),
-      prisma.contact.count({
-        where: {
-          createdAt: {
-            gte: new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1),
-            lt: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-          },
+      db.collection('tourist_spots').countDocuments(),
+      db.collection('hotels').countDocuments(),
+      db.collection('restaurants').countDocuments(),
+      db.collection('resorts').countDocuments(),
+      db.collection('contacts').countDocuments(),
+      db.collection('contacts').countDocuments({
+        createdAt: {
+          $gte: new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1),
+          $lt: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
         },
       }),
     ]);
@@ -52,5 +53,7 @@ export async function GET(): Promise<NextResponse<ApiResponse<DashboardStats>>> 
       { success: false, error: 'Failed to fetch dashboard stats' },
       { status: 500 }
     );
+  } finally {
+    await client.close();
   }
 }

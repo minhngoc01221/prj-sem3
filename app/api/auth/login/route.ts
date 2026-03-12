@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import client, { getDb } from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -7,6 +8,9 @@ const JWT_SECRET = process.env.JWT_SECRET || "karnel-travels-secret-key";
 
 export async function POST(request: NextRequest) {
   try {
+    await client.connect();
+    const db = getDb();
+    
     const body = await request.json();
     const { email, password } = body;
 
@@ -17,9 +21,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const usersCollection = db.collection("users");
+    
+    const user = await usersCollection.findOne({ email });
 
     if (!user) {
       return NextResponse.json(
@@ -46,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     const token = jwt.sign(
       {
-        userId: user.id,
+        userId: user._id.toString(),
         email: user.email,
         role: user.role,
       },
@@ -54,11 +58,17 @@ export async function POST(request: NextRequest) {
       { expiresIn: "7d" }
     );
 
+    // Update last login
+    await usersCollection.updateOne(
+      { _id: user._id },
+      { $set: { lastLogin: new Date().toISOString() } }
+    );
+
     const response = NextResponse.json(
       {
         message: "Đăng nhập thành công",
         user: {
-          id: user.id,
+          id: user._id.toString(),
           email: user.email,
           name: user.name,
           role: user.role,
@@ -82,5 +92,7 @@ export async function POST(request: NextRequest) {
       { message: "Có lỗi xảy ra" },
       { status: 500 }
     );
+  } finally {
+    await client.close();
   }
 }
