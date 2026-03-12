@@ -237,18 +237,20 @@ model TourPackage {
   @@map("tour_packages")
 }
 
-// Model for Promotions
+// Model for Promotions (F201-F210)
 model Promotion {
   id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  promoCode     String   @unique
   name          String
-  description   String
-  discount      Float
-  startDate     DateTime
-  endDate       DateTime
-  code          String?
-  applicableTo  String?
-  conditions    String?
-  createdAt     DateTime @default(now())
+  description   String?
+  discountPercent Float   // 0-100
+  startDate     DateTime @map("start_date")
+  endDate       DateTime @map("end_date")
+  targetType    String?  // "Tour" | "Hotel" | "All"
+  targetId      String?  // ID của Tour hoặc Hotel cụ thể (null = áp dụng cho tất cả)
+  status        String   @default("active") // "active" | "inactive"
+  isShowHome    Boolean  @default(false)  @map("is_show_home")
+  createdAt     DateTime @default(now())   @map("created_at")
   updatedAt     DateTime @updatedAt
 
   @@map("promotions")

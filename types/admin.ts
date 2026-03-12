@@ -195,20 +195,18 @@ export interface Booking {
 
 export interface Promotion {
   id: string;
+  promoCode: string;
   name: string;
-  description: string;
-  discountType: 'percentage' | 'fixed';
-  discountValue: number;
+  description?: string;
+  discountPercent: number;
   startDate: string;
   endDate: string;
-  applicableItems: {
-    type: 'tour' | 'hotel' | 'vehicle' | 'all';
-    ids: string[];
-  };
-  isActive: boolean;
-  showOnHome: boolean;
+  targetType?: 'Tour' | 'Hotel' | null;
+  targetId?: string | null;
+  status: 'active' | 'inactive' | 'expired' | 'scheduled';
+  isShowHome: boolean;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
 }
 
 export interface Contact {
