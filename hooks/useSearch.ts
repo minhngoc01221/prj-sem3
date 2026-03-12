@@ -177,6 +177,16 @@ export function useSearch() {
     // Resort filters
     locationType: [] as string[],
     resortType: [] as string[],
+    // Tour filters (F051-F055)
+    destination: '',
+    tourDuration: '',
+    startDate: '',
+    endDate: '',
+    // Transport filters (F056-F060)
+    transportType: [] as string[],
+    departure: '',
+    arrival: '',
+    company: [] as string[],
   });
 
   const search = useCallback(async (newParams?: Partial<typeof params>) => {
@@ -227,6 +237,20 @@ export function useSearch() {
       }
       if (searchParams.resortType?.length) {
         queryString.set('resortType', searchParams.resortType.join(','));
+      }
+      // Tour filters
+      if (searchParams.destination) queryString.set('destination', searchParams.destination);
+      if (searchParams.tourDuration) queryString.set('duration', searchParams.tourDuration);
+      if (searchParams.startDate) queryString.set('startDate', searchParams.startDate);
+      if (searchParams.endDate) queryString.set('endDate', searchParams.endDate);
+      // Transport filters
+      if (searchParams.transportType?.length) {
+        queryString.set('transportType', searchParams.transportType.join(','));
+      }
+      if (searchParams.departure) queryString.set('departure', searchParams.departure);
+      if (searchParams.arrival) queryString.set('arrival', searchParams.arrival);
+      if (searchParams.company?.length) {
+        queryString.set('company', searchParams.company.join(','));
       }
 
       const response = await fetch(`/api/search?${queryString}`);

@@ -139,7 +139,7 @@ export function PromotionsManagementContent({ promotions: initialPromotions, isL
             <div>
               <p className="text-sm text-gray-500">Giảm giá cao nhất</p>
               <p className="text-2xl font-bold text-gray-900">
-                {Math.max(...promotions.map(p => p.discountValue), 0)}%
+                {Math.max(...promotions.map(p => p.discountValue ?? 0), 0)}%
               </p>
             </div>
           </div>
@@ -205,8 +205,8 @@ export function PromotionsManagementContent({ promotions: initialPromotions, isL
                   </td>
                   <td className="px-6 py-4 text-gray-900 font-medium">
                     {promotion.discountType === 'percentage' 
-                      ? `${promotion.discountValue}%`
-                      : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(promotion.discountValue)
+                      ? `${promotion.discountValue ?? 0}%`
+                      : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(promotion.discountValue ?? 0)
                     }
                   </td>
                   <td className="px-6 py-4 text-gray-600">

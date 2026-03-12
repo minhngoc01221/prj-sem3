@@ -195,7 +195,7 @@ export default function SearchPage() {
         <div className="bg-gradient-to-r from-blue-600 to-teal-500 py-12">
           <div className="container mx-auto px-4">
             <h1 className="text-3xl font-bold text-white text-center mb-6">
-              Tìm kiếm du lịch
+            
             </h1>
             <div className="flex justify-center">
               <SearchBar variant="hero" />

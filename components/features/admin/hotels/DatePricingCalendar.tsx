@@ -54,7 +54,7 @@ export function DatePricingCalendar({ roomType, onUpdatePricing }: DatePricingCa
     // Default pricing logic based on day of week
     const date = new Date(dateKey);
     const dayOfWeek = date.getDay();
-    let basePrice = roomType.basePrice;
+    const basePrice = roomType.basePrice ?? roomType.price ?? 0;
 
     // Weekend pricing
     if (dayOfWeek === 5 || dayOfWeek === 6) {
@@ -97,7 +97,8 @@ export function DatePricingCalendar({ roomType, onUpdatePricing }: DatePricingCa
     if (!selectedDate || editingPrice === null) return;
 
     const existingIndex = pricing.findIndex(p => p.date === selectedDate);
-    const isSpecial = editingPrice !== roomType.basePrice;
+    const basePrice = roomType.basePrice ?? roomType.price ?? 0;
+    const isSpecial = editingPrice !== basePrice;
     const specialReason = isSpecial ? getSpecialReason(selectedDate) || 'Giá đặc biệt' : undefined;
 
     let newPricing: RoomPricing[];
@@ -139,7 +140,7 @@ export function DatePricingCalendar({ roomType, onUpdatePricing }: DatePricingCa
       const date = new Date(year, month, day);
       if (dayOfWeek.includes(date.getDay())) {
         const dateKey = formatDateKey(currentDate, day);
-        const newPrice = Math.round(roomType.basePrice * multiplier);
+        const newPrice = Math.round((roomType.basePrice ?? roomType.price ?? 0) * multiplier);
         const existingIndex = newPricing.findIndex(p => p.date === dateKey);
 
         if (existingIndex >= 0) {
@@ -252,7 +253,8 @@ export function DatePricingCalendar({ roomType, onUpdatePricing }: DatePricingCa
             const price = getPriceForDate(dateKey);
             const availability = getAvailabilityForDate(dateKey);
             const isAvailable = !availability || availability.available > 0;
-            const priceChange = Math.round(((price - roomType.basePrice) / roomType.basePrice) * 100);
+            const basePrice = roomType.basePrice ?? roomType.price ?? 0;
+            const priceChange = Math.round(((price - basePrice) / basePrice) * 100);
 
             return (
               <div
@@ -362,16 +364,16 @@ export function DatePricingCalendar({ roomType, onUpdatePricing }: DatePricingCa
                 <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
                   <Check className="w-5 h-5 text-green-500" />
                   <span className="text-sm text-gray-600">
-                    Giá cơ bản: <span className="font-medium">{formatPrice(roomType.basePrice)}</span>
+                    Giá cơ bản: <span className="font-medium">{formatPrice(roomType.basePrice ?? roomType.price ?? 0)}</span>
                   </span>
                 </div>
 
-                {editingPrice && editingPrice !== roomType.basePrice && (
+                {editingPrice && editingPrice !== (roomType.basePrice ?? roomType.price ?? 0) && (
                   <div className="flex items-center gap-2 p-3 bg-orange-50 rounded-lg">
                     <AlertCircle className="w-5 h-5 text-orange-600" />
                     <span className="text-sm text-orange-700">
-                      {editingPrice > roomType.basePrice ? 'Tăng' : 'Giảm'}:{' '}
-                      {Math.abs(Math.round(((editingPrice - roomType.basePrice) / roomType.basePrice) * 100))}%
+                      {editingPrice > (roomType.basePrice ?? roomType.price ?? 0) ? 'Tăng' : 'Giảm'}:{' '}
+                      {Math.abs(Math.round(((editingPrice - (roomType.basePrice ?? roomType.price ?? 0)) / (roomType.basePrice ?? roomType.price ?? 0)) * 100))}%
                     </span>
                   </div>
                 )}

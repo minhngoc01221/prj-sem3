@@ -1,34 +1,33 @@
 // Advanced Search API
 // F041-F046: Combined criteria search, distance-based, date-specific
+// Uses MongoDB directly
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { 
+import client, { getDb } from '@/lib/mongodb';
+import {
   AdvancedSearchParams,
   SortOption,
-  SearchType
+  SearchType,
 } from '@/types/search';
-
-const prisma = new PrismaClient();
+import type { TouristSpot, Hotel, Restaurant, Resort } from '@/types/search';
 
 /**
  * Calculate distance using Haversine formula
  * F042: Distance-based search from a given coordinate
  */
 function calculateDistance(
-  lat1: number, 
-  lon1: number, 
-  lat2: number, 
+  lat1: number,
+  lon1: number,
+  lat2: number,
   lon2: number
 ): number {
-  const R = 6371; // Earth's radius in km
+  const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
 
@@ -38,8 +37,11 @@ function calculateDistance(
  */
 export async function POST(request: NextRequest) {
   try {
+    await client.connect();
+    const db = getDb();
+
     const body: AdvancedSearchParams = await request.json();
-    
+
     const {
       spot,
       hotel,
@@ -56,219 +58,143 @@ export async function POST(request: NextRequest) {
       sort = SortOption.RATING_DESC,
     } = body;
 
-    const results: any[] = [];
+    const results: Record<string, unknown>[] = [];
     let totalCount = 0;
-
-    // F043: Filter by rating
-    const ratingFilter = minRating ? { gte: minRating } : undefined;
-
-    // F044: Filter by amenities
-    const amenitiesFilter = amenities && amenities.length > 0 
-      ? { hasEvery: amenities } 
-      : undefined;
 
     // Search Tourist Spots
     if (spot || (!hotel && !restaurant && !resort)) {
-      const spotWhere: any = {};
-      
+      const spotQuery: Record<string, unknown> = {};
+
       if (spot?.query) {
-        spotWhere.OR = [
-          { name: { contains: spot.query, mode: 'insensitive' } },
-          { description: { contains: spot.query, mode: 'insensitive' } },
-          { location: { contains: spot.query, mode: 'insensitive' } },
+        spotQuery.$or = [
+          { name: { $regex: spot.query, $options: 'i' } },
+          { description: { $regex: spot.query, $options: 'i' } },
+          { location: { $regex: spot.query, $options: 'i' } },
         ];
       }
-      if (spot?.region) spotWhere.region = spot.region;
-      if (spot?.type) spotWhere.type = spot.type;
-      if (ratingFilter) spotWhere.rating = ratingFilter;
-      if (spot?.maxTicketPrice) spotWhere.ticketPrice = { lte: spot.maxTicketPrice };
+      if (spot?.region) spotQuery.region = spot.region;
+      if (spot?.type) spotQuery.type = spot.type;
+      if (minRating) spotQuery.rating = { $gte: minRating };
+      if (spot?.maxTicketPrice) spotQuery.ticketPrice = { $lte: spot.maxTicketPrice };
 
-      let spotResults = await prisma.touristSpot.findMany({
-        where: spotWhere,
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          location: true,
-          region: true,
-          type: true,
-          images: true,
-          ticketPrice: true,
-          rating: true,
-          latitude: true,
-          longitude: true,
-        }
-      });
+      const spotsCollection = db.collection<TouristSpot>('spots');
+      let spotResults = await spotsCollection.find(spotQuery).toArray();
 
       // F042: Calculate distance from origin
       if (originLocation) {
         spotResults = spotResults
-          .map(s => ({
+          .map((s: any) => ({
             ...s,
-            distance: s.latitude && s.longitude 
+            distance: s.latitude && s.longitude
               ? calculateDistance(originLocation.latitude, originLocation.longitude, s.latitude, s.longitude)
-              : null
+              : null,
           }))
-          .filter(s => s.distance !== null && (!maxDistance || s.distance <= maxDistance))
-          .sort((a, b) => (a.distance || 0) - (b.distance || 0));
+          .filter((s: any) => s.distance !== null && (!maxDistance || s.distance <= maxDistance))
+          .sort((a: any, b: any) => (a.distance || 0) - (b.distance || 0));
       }
 
-      const typedSpots = spotResults.map(s => ({ ...s, searchType: SearchType.SPOT }));
+      const typedSpots = spotResults.map(s => ({
+        ...s,
+        id: s._id?.toString() || s.id,
+        image: s.images?.[0],
+        searchType: SearchType.SPOT,
+      }));
       results.push(...typedSpots);
       totalCount += spotResults.length;
     }
 
     // Search Hotels
     if (hotel || (!spot && !restaurant && !resort)) {
-      const hotelWhere: any = {};
-      
+      const hotelQuery: Record<string, unknown> = { isActive: true };
+
       if (hotel?.query) {
-        hotelWhere.OR = [
-          { name: { contains: hotel.query, mode: 'insensitive' } },
-          { description: { contains: hotel.query, mode: 'insensitive' } },
+        hotelQuery.$or = [
+          { name: { $regex: hotel.query, $options: 'i' } },
+          { description: { $regex: hotel.query, $options: 'i' } },
         ];
       }
-      if (hotel?.city) hotelWhere.city = { contains: hotel.city, mode: 'insensitive' };
-      if (hotel?.starRating?.length) hotelWhere.starRating = { in: hotel.starRating };
+      if (hotel?.city) hotelQuery.city = { $regex: hotel.city, $options: 'i' };
+      if (hotel?.starRating?.length) hotelQuery.starRating = { $in: hotel.starRating };
       if (hotel?.priceRange) {
-        hotelWhere.priceMin = {};
-        if (hotel.priceRange.min) hotelWhere.priceMin.gte = hotel.priceRange.min;
-        if (hotel.priceRange.max) hotelWhere.priceMin.lte = hotel.priceRange.max;
+        hotelQuery.priceMin = {};
+        if (hotel.priceRange.min) (hotelQuery.priceMin as Record<string, number>).$gte = hotel.priceRange.min;
+        if (hotel.priceRange.max) (hotelQuery.priceMin as Record<string, number>).$lte = hotel.priceRange.max;
       }
-      if (ratingFilter) hotelWhere.rating = ratingFilter;
-      if (amenitiesFilter) hotelWhere.amenities = amenitiesFilter;
+      if (minRating) hotelQuery.rating = { $gte: minRating };
+      if (amenities && amenities.length > 0) hotelQuery.amenities = { $all: amenities };
 
-      // F045: Date-specific availability check
-      if (dateRange && groupSize) {
-        const hotels = await prisma.hotel.findMany({
-          where: hotelWhere,
-          include: {
-            rooms: {
-              where: { maxGuests: { gte: groupSize } }
-            }
-          }
-        });
+      const hotelsCollection = db.collection<Hotel>('hotels');
+      const hotelResults = await hotelsCollection.find(hotelQuery).toArray();
 
-        const availableHotels = hotels
-          .map(h => {
-            const totalAvailable = h.rooms.reduce((sum, r) => sum + r.available, 0);
-            return { ...h, totalAvailable };
-          })
-          .filter(h => h.totalAvailable > 0);
-
-        const typedHotels = availableHotels.map(h => ({ 
-          ...h, 
-          searchType: SearchType.HOTEL,
-          availableRooms: h.totalAvailable 
-        }));
-        results.push(...typedHotels);
-        totalCount += typedHotels.length;
-      } else {
-        const hotelResults = await prisma.hotel.findMany({
-          where: hotelWhere,
-          select: {
-            id: true,
-            name: true,
-            address: true,
-            city: true,
-            starRating: true,
-            priceMin: true,
-            priceMax: true,
-            amenities: true,
-            images: true,
-            rating: true,
-            latitude: true,
-            longitude: true,
-          }
-        });
-        
-        const typedHotels = hotelResults.map(h => ({ ...h, searchType: SearchType.HOTEL }));
-        results.push(...typedHotels);
-        totalCount += hotelResults.length;
-      }
+      const typedHotels = hotelResults.map(h => ({
+        ...h,
+        id: h._id?.toString() || h.id,
+        image: h.images?.[0],
+        searchType: SearchType.HOTEL,
+      }));
+      results.push(...typedHotels);
+      totalCount += hotelResults.length;
     }
 
     // Search Restaurants
     if (restaurant || (!spot && !hotel && !resort)) {
-      const restaurantWhere: any = {};
-      
+      const restaurantQuery: Record<string, unknown> = { isActive: true };
+
       if (restaurant?.query) {
-        restaurantWhere.OR = [
-          { name: { contains: restaurant.query, mode: 'insensitive' } },
-          { address: { contains: restaurant.query, mode: 'insensitive' } },
+        restaurantQuery.$or = [
+          { name: { $regex: restaurant.query, $options: 'i' } },
+          { address: { $regex: restaurant.query, $options: 'i' } },
         ];
       }
-      if (restaurant?.city) restaurantWhere.city = { contains: restaurant.city, mode: 'insensitive' };
-      if (restaurant?.cuisineType?.length) restaurantWhere.cuisineType = { in: restaurant.cuisineType };
-      if (restaurant?.priceRange?.length) restaurantWhere.priceRange = { in: restaurant.priceRange };
-      if (restaurant?.style?.length) restaurantWhere.style = { in: restaurant.style };
-      if (ratingFilter) restaurantWhere.rating = ratingFilter;
+      if (restaurant?.city) restaurantQuery.city = { $regex: restaurant.city, $options: 'i' };
+      if (restaurant?.cuisineType?.length) restaurantQuery.cuisineType = { $in: restaurant.cuisineType };
+      if (restaurant?.priceRange?.length) restaurantQuery.priceRange = { $in: restaurant.priceRange };
+      if (restaurant?.style?.length) restaurantQuery.style = { $in: restaurant.style };
+      if (minRating) restaurantQuery.rating = { $gte: minRating };
 
-      const restaurantResults = await prisma.restaurant.findMany({
-        where: restaurantWhere,
-        select: {
-          id: true,
-          name: true,
-          address: true,
-          city: true,
-          cuisineType: true,
-          priceRange: true,
-          style: true,
-          openTime: true,
-          closeTime: true,
-          images: true,
-          rating: true,
-          latitude: true,
-          longitude: true,
-        }
-      });
+      const restaurantsCollection = db.collection<Restaurant>('restaurants');
+      const restaurantResults = await restaurantsCollection.find(restaurantQuery).toArray();
 
-      const typedRestaurants = restaurantResults.map(r => ({ ...r, searchType: SearchType.RESTAURANT }));
+      const typedRestaurants = restaurantResults.map(r => ({
+        ...r,
+        id: r._id?.toString() || r.id,
+        image: r.images?.[0],
+        searchType: SearchType.RESTAURANT,
+      }));
       results.push(...typedRestaurants);
       totalCount += restaurantResults.length;
     }
 
     // Search Resorts
     if (resort || (!spot && !hotel && !restaurant)) {
-      const resortWhere: any = {};
-      
+      const resortQuery: Record<string, unknown> = { isActive: true };
+
       if (resort?.query) {
-        resortWhere.OR = [
-          { name: { contains: resort.query, mode: 'insensitive' } },
-          { description: { contains: resort.query, mode: 'insensitive' } },
+        resortQuery.$or = [
+          { name: { $regex: resort.query, $options: 'i' } },
+          { description: { $regex: resort.query, $options: 'i' } },
         ];
       }
-      if (resort?.locationType?.length) resortWhere.locationType = { in: resort.locationType };
-      if (resort?.starRating?.length) resortWhere.starRating = { in: resort.starRating };
+      if (resort?.locationType?.length) resortQuery.location = { $in: resort.locationType };
+      if (resort?.starRating?.length) resortQuery.starRating = { $in: resort.starRating };
       if (resort?.priceRange) {
-        resortWhere.priceMin = {};
-        if (resort.priceRange.min) resortWhere.priceMin.gte = resort.priceRange.min;
-        if (resort.priceRange.max) resortWhere.priceMin.lte = resort.priceRange.max;
+        resortQuery.priceMin = {};
+        if (resort.priceRange.min) (resortQuery.priceMin as Record<string, number>).$gte = resort.priceRange.min;
+        if (resort.priceRange.max) (resortQuery.priceMin as Record<string, number>).$lte = resort.priceRange.max;
       }
-      if (resort?.resortType?.length) resortWhere.resortType = { in: resort.resortType };
-      if (ratingFilter) resortWhere.rating = ratingFilter;
-      if (amenitiesFilter) resortWhere.amenities = amenitiesFilter;
+      if (resort?.resortType?.length) resortQuery.resortType = { $in: resort.resortType };
+      if (minRating) resortQuery.rating = { $gte: minRating };
+      if (amenities && amenities.length > 0) resortQuery.amenities = { $all: amenities };
 
-      const resortResults = await prisma.resort.findMany({
-        where: resortWhere,
-        select: {
-          id: true,
-          name: true,
-          address: true,
-          locationType: true,
-          starRating: true,
-          priceMin: true,
-          priceMax: true,
-          resortType: true,
-          amenities: true,
-          images: true,
-          rating: true,
-          latitude: true,
-          longitude: true,
-        }
-      });
+      const resortsCollection = db.collection<Resort>('resorts');
+      const resortResults = await resortsCollection.find(resortQuery).toArray();
 
-      const typedResorts = resortResults.map(r => ({ ...r, searchType: SearchType.RESORT }));
+      const typedResorts = resortResults.map(r => ({
+        ...r,
+        id: r._id?.toString() || r.id,
+        image: r.images?.[0],
+        searchType: SearchType.RESORT,
+      }));
       results.push(...typedResorts);
       totalCount += resortResults.length;
     }
@@ -276,26 +202,26 @@ export async function POST(request: NextRequest) {
     // F036: Apply sorting
     switch (sort) {
       case SortOption.RATING_DESC:
-        results.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        results.sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0));
         break;
       case SortOption.RATING_ASC:
-        results.sort((a, b) => (a.rating || 0) - (b.rating || 0));
+        results.sort((a, b) => Number(a.rating || 0) - Number(b.rating || 0));
         break;
       case SortOption.PRICE_ASC:
-        results.sort((a, b) => (a.priceMin || a.price || 0) - (b.priceMin || b.price || 0));
+        results.sort((a, b) => Number(a.priceMin || a.price || 0) - Number(b.priceMin || b.price || 0));
         break;
       case SortOption.PRICE_DESC:
-        results.sort((a, b) => (b.priceMin || b.price || 0) - (a.priceMin || a.price || 0));
+        results.sort((a, b) => Number(b.priceMin || b.price || 0) - Number(a.priceMin || a.price || 0));
         break;
       case SortOption.NAME_ASC:
-        results.sort((a, b) => a.name.localeCompare(b.name));
+        results.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
         break;
       case SortOption.NAME_DESC:
-        results.sort((a, b) => b.name.localeCompare(a.name));
+        results.sort((a, b) => String(b.name || '').localeCompare(String(a.name || '')));
         break;
       case SortOption.DISTANCE:
         if (originLocation) {
-          results.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+          results.sort((a, b) => Number(a.distance || 0) - Number(b.distance || 0));
         }
         break;
     }
@@ -322,14 +248,10 @@ export async function POST(request: NextRequest) {
         amenities,
         dateRange,
         groupSize,
-      }
+      },
     });
-
   } catch (error) {
     console.error('Advanced search error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

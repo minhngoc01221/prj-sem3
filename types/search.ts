@@ -1,5 +1,15 @@
 // Search Types and Interfaces
-// F021-F048 - Search & Advanced Search Types
+// F021-F069 - Search & Advanced Search Types
+// Uses types from @types/admin for entity types
+
+// Import entity types from admin
+import type { TouristSpot, Hotel, Restaurant, Resort, RoomType, Vehicle, TourPackage, ItineraryDay, Booking, Promotion, Contact, User, ApiResponse } from './admin';
+
+// Re-export entity types from admin
+export type { TouristSpot, Hotel, Restaurant, Resort, RoomType, Vehicle, TourPackage, ItineraryDay, Booking, Promotion, Contact, User, ApiResponse };
+
+// Re-export for convenience - using type alias to avoid conflicts
+export type { Vehicle as TransportVehicle };
 
 // ==================== ENUMS ====================
 
@@ -157,6 +167,58 @@ export interface ResortSearchParams extends BaseSearchParams {
   query?: string;
 }
 
+// F051-F055: Tour Package Search
+export interface TourSearchParams extends BaseSearchParams {
+  query?: string;
+  destination?: string;
+  duration?: string;
+  startDate?: string;
+  endDate?: string;
+  priceMin?: number;
+  priceMax?: number;
+}
+
+// F056-F060: Transport Search
+export interface TransportSearchParams extends BaseSearchParams {
+  query?: string;
+  transportType?: string[];
+  departure?: string;
+  arrival?: string;
+  priceMin?: number;
+  priceMax?: number;
+  company?: string[];
+  duration?: string;
+}
+
+// F067 & F069: Combo Search
+export interface ComboSearchParams {
+  totalBudget: number;
+  tourParams?: {
+    destination?: string;
+    duration?: string;
+    startDate?: string;
+  };
+  hotelParams?: {
+    city?: string;
+    checkIn?: string;
+    checkOut?: string;
+    guests?: number;
+  };
+  transportParams?: {
+    departure?: string;
+    arrival?: string;
+  };
+}
+
+export interface ComboResult {
+  tour?: TourPackage;
+  hotel?: Hotel;
+  transport?: Vehicle;
+  totalPrice: number;
+  savings: number;
+  combinations: number;
+}
+
 // F041-F046: Advanced Search
 export interface AdvancedSearchParams {
   // Combined criteria
@@ -164,23 +226,23 @@ export interface AdvancedSearchParams {
   hotel?: HotelSearchParams;
   restaurant?: RestaurantSearchParams;
   resort?: ResortSearchParams;
-  
+
   // F042: Distance-based search
   originLocation?: GeoLocation;
-  maxDistance?: number; // in kilometers
-  
+  maxDistance?: number;
+
   // F043: Rating filter
   minRating?: number;
-  
+
   // F044: Amenities filter
   amenities?: string[];
-  
+
   // F045: Date-specific search
   dateRange?: DateRange;
-  
+
   // F046: Group size
   groupSize?: number;
-  
+
   // Pagination & Sorting
   page?: number;
   limit?: number;
@@ -189,6 +251,7 @@ export interface AdvancedSearchParams {
 
 // ==================== RESPONSE INTERFACES ====================
 
+// Note: Using custom PaginatedResponse for search (different from admin)
 export interface PaginatedResponse<T> {
   data: T[];
   pagination: {
@@ -201,6 +264,7 @@ export interface PaginatedResponse<T> {
   };
 }
 
+// Base search result
 export interface SearchResult {
   id: string;
   type: SearchType;
@@ -210,14 +274,24 @@ export interface SearchResult {
   rating?: number;
   price?: number;
   location?: string;
-  distance?: number; // F042: distance from origin
+  distance?: number;
+}
+
+// Combo search response (F067, F069)
+export interface ComboSearchResponse {
+  data: ComboResult[];
+  summary: {
+    totalCombinations: number;
+    averagePrice: number;
+    bestValue: ComboResult | null;
+  };
 }
 
 // ==================== SAVED SEARCH (F047) ====================
 
 export interface SavedSearch {
   id: string;
-  userId?: string; // null for anonymous
+  userId?: string;
   name: string;
   params: AdvancedSearchParams;
   createdAt: Date;
@@ -259,7 +333,7 @@ export interface AutocompleteSuggestion {
   id: string;
   type: SearchType;
   name: string;
-  subtext?: string; // e.g., "Hà Nội", "Khách sạn"
+  subtext?: string;
   image?: string;
 }
 

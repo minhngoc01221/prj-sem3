@@ -31,7 +31,7 @@ export default function DashboardError({ error, reset }: DashboardErrorProps) {
             <RefreshCw className="mr-2 h-4 w-4" />
             Thử lại
           </Button>
-          <Button onClick={() => window.location.href('/')} variant="outline">
+          <Button onClick={() => window.location.reload()} variant="outline">
             <Home className="mr-2 h-4 w-4" />
             Về trang chủ
           </Button>

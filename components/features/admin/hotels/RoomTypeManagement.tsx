@@ -219,13 +219,13 @@ export function RoomTypeManagement({ roomTypes, onUpdate }: RoomTypeManagementPr
                     </div>
                     <div className="flex items-center gap-1 text-orange-600 font-medium">
                       <DollarSign className="w-3.5 h-3.5" />
-                      <span>{formatPrice(roomType.basePrice)}</span>
+                      <span>{formatPrice(roomType.basePrice ?? 0)}</span>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 mt-2">
                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                      roomType.availableRooms > 0
+                      (roomType.availableRooms ?? 0) > 0
                         ? 'bg-green-100 text-green-700'
                         : 'bg-red-100 text-red-700'
                     }`}>

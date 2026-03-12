@@ -22,6 +22,7 @@ model User {
 }
 
 // Model for Tourist Spots
+// Indexes optimized for F022-F025 (Spot Search), F042 (Location)
 model TouristSpot {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
@@ -34,13 +35,22 @@ model TouristSpot {
   bestTime    String?
   ticketPrice Float?
   rating      Float    @default(0)
+  latitude    Float?
+  longitude   Float?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  // Indexes for search performance
+  @@index([region, type])            // F022: Region + Type filter
+  @@index([rating(sort: Desc)])       // F023: Rating sort
+  @@index([ticketPrice])             // F024: Price range
+  @@index([latitude, longitude])     // F042: Geo distance search
 
   @@map("tourist_spots")
 }
 
 // Model for Hotels
+// Indexes optimized for F023-F027 (Hotel Search), F042 (Location)
 model Hotel {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
@@ -61,6 +71,13 @@ model Hotel {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Indexes for search performance
+  @@index([city, starRating])        // F023: City + Star rating filter
+  @@index([priceMin, priceMax])     // F024: Price range
+  @@index([amenities])              // F025: Amenities filter
+  @@index([latitude, longitude])    // F042: Geo distance search
+  @@index([rating(sort: Desc)])     // F036: Rating sort
+
   @@map("hotels")
 }
 
@@ -75,10 +92,15 @@ model Room {
   images      String[]
   hotel       Hotel    @relation(fields: [hotelId], references: [id])
 
+  // Indexes for F027: Room availability search
+  @@index([hotelId, available])     // F027: Check available rooms
+  @@index([maxGuests])             // F027: Filter by guest capacity
+
   @@map("rooms")
 }
 
 // Model for Restaurants
+// Indexes optimized for F028-F030 (Restaurant Search)
 model Restaurant {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
@@ -99,6 +121,13 @@ model Restaurant {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Indexes for search performance
+  @@index([city, cuisineType])       // F028: City + Cuisine type
+  @@index([priceRange])             // F029: Price range
+  @@index([style])                  // F030: Style filter
+  @@index([latitude, longitude])    // F042: Geo distance
+  @@index([rating(sort: Desc)])     // F036: Rating sort
+
   @@map("restaurants")
 }
 
@@ -116,6 +145,7 @@ model MenuItem {
 }
 
 // Model for Resorts
+// Indexes optimized for F031-F033 (Resort Search)
 model Resort {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
@@ -138,6 +168,14 @@ model Resort {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Indexes for search performance
+  @@index([locationType, starRating]) // F031: Location + Rating
+  @@index([priceMin, priceMax])      // F032: Price range
+  @@index([resortType])              // F033: Resort type filter
+  @@index([amenities])               // F025: Amenities filter
+  @@index([latitude, longitude])      // F042: Geo distance
+  @@index([rating(sort: Desc)])       // F036: Rating sort
+
   @@map("resorts")
 }
 
@@ -156,6 +194,7 @@ model ResortRoom {
 }
 
 // Model for Transport
+// Indexes optimized for F056-F060 (Transport Search)
 model Transport {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   type        String   // máy bay, xe khách, tàu hỏa, thuê xe, limousine
@@ -166,14 +205,24 @@ model Transport {
   schedule    String   // lịch trình
   price       Float
   duration    String   // thời gian di chuyển
+  rating      Float    @default(0)
   contact     String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  // Indexes for search performance
+  @@index([departure, arrival])     // F056: Route search (most critical)
+  @@index([departure])              // F056: Departure filter
+  @@index([arrival])                // F056: Arrival filter
+  @@index([type])                   // F057: Transport type filter
+  @@index([price])                  // F058: Price range
+  @@index([company])                // F059: Company filter
 
   @@map("transports")
 }
 
 // Model for Tour Packages
+// Indexes optimized for F051-F055 (Tour Search), F068 (Promotions)
 model TourPackage {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
@@ -191,10 +240,19 @@ model TourPackage {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Indexes for search performance
+  @@index([price])                  // F052: Price range
+  @@index([duration])                // F053: Duration filter
+  @@index([startDate, endDate])    // F054: Date range availability
+  @@index([destinations])           // F055: Destination filter
+  @@index([discount, startDate, endDate]) // F068: Active promotions
+  @@index([rating(sort: Desc)])     // F036: Rating sort
+
   @@map("tour_packages")
 }
 
 // Model for Promotions
+// Indexes optimized for F068 (Promotion Search)
 model Promotion {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
@@ -207,6 +265,11 @@ model Promotion {
   conditions  String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  // Indexes for F068: Active promotions
+  @@index([startDate, endDate])    // F068: Active date range
+  @@index([applicableTo])          // F068: Filter by entity type
+  @@index([code])                  // F068: Voucher code lookup
 
   @@map("promotions")
 }

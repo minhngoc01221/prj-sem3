@@ -177,7 +177,7 @@ export function RoomAvailabilityGrid({ roomType, onUpdateAvailability }: RoomAva
             const isToday = date.getTime() === today.getTime();
             const availData = getAvailabilityForDate(dateKey);
 
-            const status = availData ? getStatusForAvailability(availData.available, totalRooms) : 'available';
+            const status = availData ? getStatusForAvailability(availData.available, totalRooms ?? 0) : 'available';
             const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
             const statusColors = {
@@ -229,7 +229,7 @@ export function RoomAvailabilityGrid({ roomType, onUpdateAvailability }: RoomAva
                       / {totalRooms} phòng
                     </div>
 
-                    {availData && availData.booked > 0 && (
+                    {availData && (availData.booked ?? 0) > 0 && (
                       <div className="mt-1">
                         <div className="w-full bg-gray-200 rounded-full h-1.5">
                           <div
@@ -239,7 +239,7 @@ export function RoomAvailabilityGrid({ roomType, onUpdateAvailability }: RoomAva
                               status === 'critical' ? 'bg-orange-500' :
                               'bg-red-500'
                             }`}
-                            style={{ width: `${(availData.booked / totalRooms) * 100}%` }}
+                            style={{ width: `${((availData.booked ?? 0) / (totalRooms ?? 1)) * 100}%` }}
                           />
                         </div>
                         <div className="text-xs text-gray-500 mt-0.5">

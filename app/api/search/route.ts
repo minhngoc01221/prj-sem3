@@ -1,15 +1,12 @@
 // Search API Route
-// F021-F033: Main Search with Multi-criteria Filtering
-// Handles: Tourist Spots, Hotels, Restaurants, Resorts
+// F021-F069: Main Search with Multi-criteria Filtering
+// Handles: Tourist Spots, Hotels, Restaurants, Resorts, Tours, Transports
+// Uses MongoDB directly (same as admin)
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { 
-  SearchType, 
-  SpotSearchParams, 
-  HotelSearchParams, 
-  RestaurantSearchParams, 
-  ResortSearchParams,
+import client, { getDb } from '@/lib/mongodb';
+import {
+  SearchType,
   SortOption,
   Region,
   SpotType,
@@ -17,10 +14,15 @@ import {
   PriceRange,
   RestaurantStyle,
   ResortLocationType,
-  ResortType
+  ResortType,
+  TransportType,
+  TouristSpot,
+  Hotel,
+  Restaurant,
+  Resort,
+  TourPackage,
+  Vehicle,
 } from '@/types/search';
-
-const prisma = new PrismaClient();
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -76,7 +78,6 @@ function parseSearchParams(searchParams: URLSearchParams): {
   const sort = (searchParams.get('sort') || 'rating_desc') as SortOption;
   const query = searchParams.get('query') || undefined;
 
-  // Parse array parameters
   const parseArray = (param: string | null): string[] | undefined => {
     if (!param) return undefined;
     return param.split(',').filter(Boolean);
@@ -93,12 +94,10 @@ function parseSearchParams(searchParams: URLSearchParams): {
     limit: Math.min(100, Math.max(1, limit)),
     sort,
     query,
-    // Spot filters
     region: searchParams.get('region') as Region | undefined,
     spotType: searchParams.get('spotType') as SpotType | undefined,
     minRating: searchParams.get('minRating') ? parseFloat(searchParams.get('minRating')!) : undefined,
     maxTicketPrice: searchParams.get('maxTicketPrice') ? parseFloat(searchParams.get('maxTicketPrice')!) : undefined,
-    // Hotel filters
     city: searchParams.get('city') || undefined,
     starRating: parseNumberArray(searchParams.get('starRating')),
     priceMin: searchParams.get('priceMin') ? parseFloat(searchParams.get('priceMin')!) : undefined,
@@ -107,167 +106,99 @@ function parseSearchParams(searchParams: URLSearchParams): {
     checkIn: searchParams.get('checkIn') || undefined,
     checkOut: searchParams.get('checkOut') || undefined,
     guests: searchParams.get('guests') ? parseInt(searchParams.get('guests')!) : undefined,
-    // Restaurant filters
     cuisineType: parseArray(searchParams.get('cuisineType')),
     priceRange: parseArray(searchParams.get('priceRange')),
     style: parseArray(searchParams.get('style')),
     openNow: searchParams.get('openNow') === 'true',
-    // Resort filters
     locationType: parseArray(searchParams.get('locationType')),
     resortType: parseArray(searchParams.get('resortType')),
-    // Tour filters (F051-F055)
     destination: searchParams.get('destination') || undefined,
     duration: searchParams.get('duration') || undefined,
     startDate: searchParams.get('startDate') || undefined,
     endDate: searchParams.get('endDate') || undefined,
-    // Transport filters (F056-F060)
     transportType: parseArray(searchParams.get('transportType')),
     departure: searchParams.get('departure') || undefined,
     arrival: searchParams.get('arrival') || undefined,
     company: parseArray(searchParams.get('company')),
-    // Distance search
     latitude: searchParams.get('latitude') ? parseFloat(searchParams.get('latitude')!) : undefined,
     longitude: searchParams.get('longitude') ? parseFloat(searchParams.get('longitude')!) : undefined,
     maxDistance: searchParams.get('maxDistance') ? parseFloat(searchParams.get('maxDistance')!) : undefined,
   };
 }
 
-/**
- * Calculate skip value for pagination
- */
 function getSkip(page: number, limit: number): number {
   return (page - 1) * limit;
 }
 
 /**
- * Build orderBy clause based on sort option
- * F036: Sorting logic
+ * Calculate distance using Haversine formula
  */
-function getOrderBy(sort: SortOption, hasGeoLocation: boolean = false) {
-  const sortMapping: Record<string, any> = {
-    [SortOption.PRICE_ASC]: { priceMin: 'asc' },
-    [SortOption.PRICE_DESC]: { priceMin: 'desc' },
-    [SortOption.RATING_DESC]: { rating: 'desc' },
-    [SortOption.RATING_ASC]: { rating: 'asc' },
-    [SortOption.NAME_ASC]: { name: 'asc' },
-    [SortOption.NAME_DESC]: { name: 'desc' },
-    // F042: Distance sorting requires raw query, handled separately
-  };
-
-  if (sort === SortOption.DISTANCE && hasGeoLocation) {
-    return undefined; // Will use raw query for distance
-  }
-
-  return sortMapping[sort] || { rating: 'desc' };
-}
-
-/**
- * F027: Check room availability
- * Compares total rooms in inventory vs booked rooms for a date range
- */
-async function checkRoomAvailability(
-  hotelId: string, 
-  checkIn: Date, 
-  checkOut: Date, 
-  requiredRooms: number
-): Promise<boolean> {
-  // Get total available rooms from all room types
-  const rooms = await prisma.room.findMany({
-    where: { hotelId },
-    select: { available: true }
-  });
-
-  const totalAvailable = rooms.reduce((sum, room) => sum + room.available, 0);
-
-  // Count booked rooms in the date range
-  // Note: In a real system, you'd have a Booking model with checkIn/checkOut
-  // For now, we assume rooms are reserved if they exist and are marked available
-  
-  return totalAvailable >= requiredRooms;
-}
-
-/**
- * F042: Calculate distance using Haversine formula
- * Returns distance in kilometers
- */
-function calculateDistance(
-  lat1: number, 
-  lon1: number, 
-  lat2: number, 
-  lon2: number
-): number {
-  const R = 6371; // Earth's radius in km
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
 
 // ==================== SPOT SEARCH (F022) ====================
 
 async function searchSpots(params: ReturnType<typeof parseSearchParams>) {
-  const { page, limit, sort, query, region, spotType, minRating, maxTicketPrice, latitude, longitude, maxDistance } = params;
+  await client.connect();
+  const db = getDb();
+  const collection = db.collection<TouristSpot>('spots');
 
-  // F042: Distance-based search
+  const { page, limit, sort, query, region, minRating, maxTicketPrice, latitude, longitude, maxDistance } = params;
   const hasGeoLocation = latitude && longitude;
 
-  // Build where clause
-  const where: any = {};
+  const mongoQuery: Record<string, unknown> = {};
 
   if (query) {
-    where.OR = [
-      { name: { contains: query, mode: 'insensitive' } },
-      { description: { contains: query, mode: 'insensitive' } },
-      { location: { contains: query, mode: 'insensitive' } },
+    mongoQuery.$or = [
+      { name: { $regex: query, $options: 'i' } },
+      { description: { $regex: query, $options: 'i' } },
+      { location: { $regex: query, $options: 'i' } },
     ];
   }
+  if (region) mongoQuery.region = region;
+  if (params.spotType) mongoQuery.type = params.spotType;
+  if (minRating) mongoQuery.rating = { $gte: minRating };
+  if (maxTicketPrice) mongoQuery.ticketPrice = { $lte: maxTicketPrice };
 
-  if (region) where.region = region;
-  if (spotType) where.type = spotType;
-  if (minRating) where.rating = { gte: minRating };
-  if (maxTicketPrice) where.ticketPrice = { lte: maxTicketPrice };
+  const sortOption: Record<string, 1 | -1> = {};
+  if (sort === SortOption.RATING_DESC) sortOption.rating = -1;
+  else if (sort === SortOption.RATING_ASC) sortOption.rating = 1;
+  else if (sort === SortOption.NAME_ASC) sortOption.name = 1;
+  else if (sort === SortOption.NAME_DESC) sortOption.name = -1;
+  else sortOption.rating = -1;
 
-  // Execute query
-  const [spots, total] = await Promise.all([
-    prisma.touristSpot.findMany({
-      where,
-      orderBy: getOrderBy(sort, hasGeoLocation),
-      skip: getSkip(page, limit),
-      take: limit,
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        location: true,
-        region: true,
-        type: true,
-        images: true,
-        bestTime: true,
-        ticketPrice: true,
-        rating: true,
-        latitude: true,
-        longitude: true,
-      }
-    }),
-    prisma.touristSpot.count({ where }),
-  ]);
+  const total = await collection.countDocuments(mongoQuery);
+  const spots = await collection
+    .find(mongoQuery)
+    .sort(sortOption)
+    .skip(getSkip(page, limit))
+    .limit(limit)
+    .toArray();
 
-  // F042: Calculate distance and filter
-  let results = spots;
+  let results = spots.map((s: any) => ({
+    ...s,
+    id: s._id?.toString() || s.id,
+    image: s.images?.[0],
+  }));
+
   if (hasGeoLocation) {
-    results = spots
-      .map(spot => ({
+    results = results
+      .map((spot: any) => ({
         ...spot,
-        distance: spot.latitude && spot.longitude 
+        distance: spot.latitude && spot.longitude
           ? calculateDistance(latitude!, longitude!, spot.latitude, spot.longitude)
-          : null
+          : null,
       }))
-      .filter(spot => spot.distance !== null && (!maxDistance || spot.distance <= maxDistance))
-      .sort((a, b) => (a.distance || 0) - (b.distance || 0));
+      .filter((spot: any) => spot.distance !== null && (!maxDistance || spot.distance <= maxDistance))
+      .sort((a: any, b: any) => (a.distance || 0) - (b.distance || 0));
   }
 
   return { results, total };
@@ -276,444 +207,453 @@ async function searchSpots(params: ReturnType<typeof parseSearchParams>) {
 // ==================== HOTEL SEARCH (F023-F027) ====================
 
 async function searchHotels(params: ReturnType<typeof parseSearchParams>) {
-  const { page, limit, sort, query, city, starRating, priceMin, priceMax, amenities, checkIn, checkOut, guests } = params;
+  await client.connect();
+  const db = getDb();
+  const collection = db.collection<Hotel>('hotels');
 
-  // Build where clause
-  const where: any = {};
+  const { page, limit, sort, query, city, starRating, priceMin, priceMax, amenities } = params;
+
+  const mongoQuery: Record<string, unknown> = { isActive: true };
 
   if (query) {
-    where.OR = [
-      { name: { contains: query, mode: 'insensitive' } },
-      { description: { contains: query, mode: 'insensitive' } },
-      { address: { contains: query, mode: 'insensitive' } },
+    mongoQuery.$or = [
+      { name: { $regex: query, $options: 'i' } },
+      { description: { $regex: query, $options: 'i' } },
+      { address: { $regex: query, $options: 'i' } },
     ];
   }
-
-  if (city) where.city = { contains: city, mode: 'insensitive' };
-  if (starRating && starRating.length > 0) where.starRating = { in: starRating };
+  if (city) mongoQuery.city = { $regex: city, $options: 'i' };
+  if (starRating && starRating.length > 0) mongoQuery.starRating = { $in: starRating };
   if (priceMin || priceMax) {
-    where.priceMin = {};
-    if (priceMin) where.priceMin.gte = priceMin;
-    if (priceMax) where.priceMax.lte = priceMax;
+    mongoQuery.priceMin = {};
+    if (priceMin) (mongoQuery.priceMin as Record<string, number>).$gte = priceMin;
+    if (priceMax) (mongoQuery.priceMin as Record<string, number>).$lte = priceMax;
   }
   if (amenities && amenities.length > 0) {
-    where.amenities = { hasEvery: amenities };
+    mongoQuery.amenities = { $all: amenities };
   }
 
-  // F027: Check room availability if dates provided
-  let availableHotelIds: string[] | null = null;
-  if (checkIn && checkOut && guests) {
-    const hotels = await prisma.hotel.findMany({
-      where,
-      include: {
-        rooms: {
-          where: { maxGuests: { gte: guests } }
-        }
-      }
-    });
+  const sortOption: Record<string, 1 | -1> = {};
+  if (sort === SortOption.PRICE_ASC) sortOption.priceMin = 1;
+  else if (sort === SortOption.PRICE_DESC) sortOption.priceMin = -1;
+  else if (sort === SortOption.RATING_DESC) sortOption.rating = -1;
+  else if (sort === SortOption.NAME_ASC) sortOption.name = 1;
+  else sortOption.rating = -1;
 
-    availableHotelIds = [];
-    for (const hotel of hotels) {
-      const totalAvailable = hotel.rooms.reduce((sum, room) => sum + room.available, 0);
-      if (totalAvailable > 0) {
-        availableHotelIds.push(hotel.id);
-      }
-    }
+  const total = await collection.countDocuments(mongoQuery);
+  const hotels = await collection
+    .find(mongoQuery)
+    .sort(sortOption)
+    .skip(getSkip(page, limit))
+    .limit(limit)
+    .toArray();
 
-    if (availableHotelIds.length === 0) {
-      return { results: [], total: 0 };
-    }
-  }
-
-  if (availableHotelIds) {
-    where.id = { in: availableHotelIds };
-  }
-
-  // Execute query
-  const [hotels, total] = await Promise.all([
-    prisma.hotel.findMany({
-      where,
-      orderBy: getOrderBy(sort),
-      skip: getSkip(page, limit),
-      take: limit,
-      select: {
-        id: true,
-        name: true,
-        address: true,
-        city: true,
-        starRating: true,
-        priceMin: true,
-        priceMax: true,
-        amenities: true,
-        images: true,
-        rating: true,
-        latitude: true,
-        longitude: true,
-      }
-    }),
-    prisma.hotel.count({ where }),
-  ]);
-
-  return { results: hotels, total };
+  return {
+    results: hotels.map(h => ({ ...h, id: h._id?.toString() || h.id, image: h.images?.[0] })),
+    total,
+  };
 }
 
 // ==================== RESTAURANT SEARCH (F028-F030) ====================
 
 async function searchRestaurants(params: ReturnType<typeof parseSearchParams>) {
-  const { page, limit, sort, query, city, cuisineType, priceRange, style, openNow } = params;
+  await client.connect();
+  const db = getDb();
+  const collection = db.collection<Restaurant>('restaurants');
 
-  // Build where clause
-  const where: any = {};
+  const { page, limit, sort, query, city, cuisineType, priceRange, style } = params;
+
+  const mongoQuery: Record<string, unknown> = { isActive: true };
 
   if (query) {
-    where.OR = [
-      { name: { contains: query, mode: 'insensitive' } },
-      { address: { contains: query, mode: 'insensitive' } },
+    mongoQuery.$or = [
+      { name: { $regex: query, $options: 'i' } },
+      { address: { $regex: query, $options: 'i' } },
     ];
   }
+  if (city) mongoQuery.city = { $regex: city, $options: 'i' };
+  if (cuisineType && cuisineType.length > 0) mongoQuery.cuisineType = { $in: cuisineType };
+  if (priceRange && priceRange.length > 0) mongoQuery.priceRange = { $in: priceRange };
+  if (style && style.length > 0) mongoQuery.style = { $in: style };
 
-  if (city) where.city = { contains: city, mode: 'insensitive' };
-  if (cuisineType && cuisineType.length > 0) where.cuisineType = { in: cuisineType };
-  if (priceRange && priceRange.length > 0) where.priceRange = { in: priceRange };
-  if (style && style.length > 0) where.style = { in: style };
+  const sortOption: Record<string, 1 | -1> = {};
+  if (sort === SortOption.RATING_DESC) sortOption.rating = -1;
+  else if (sort === SortOption.NAME_ASC) sortOption.name = 1;
+  else sortOption.rating = -1;
 
-  // F028: Check if currently open
-  if (openNow) {
-    const now = new Date();
-    const currentTime = now.toTimeString().slice(0, 5); // HH:mm format
-    // Note: In production, you'd compare with openTime/closeTime
-    // For now, we return all restaurants
-  }
+  const total = await collection.countDocuments(mongoQuery);
+  const restaurants = await collection
+    .find(mongoQuery)
+    .sort(sortOption)
+    .skip(getSkip(page, limit))
+    .limit(limit)
+    .toArray();
 
-  // Execute query
-  const [restaurants, total] = await Promise.all([
-    prisma.restaurant.findMany({
-      where,
-      orderBy: getOrderBy(sort),
-      skip: getSkip(page, limit),
-      take: limit,
-      select: {
-        id: true,
-        name: true,
-        address: true,
-        city: true,
-        cuisineType: true,
-        priceRange: true,
-        style: true,
-        openTime: true,
-        closeTime: true,
-        images: true,
-        rating: true,
-        latitude: true,
-        longitude: true,
-      }
-    }),
-    prisma.restaurant.count({ where }),
-  ]);
-
-  return { results: restaurants, total };
+  return {
+    results: restaurants.map(r => ({ ...r, id: r._id?.toString() || r.id, image: r.images?.[0] })),
+    total,
+  };
 }
 
 // ==================== RESORT SEARCH (F031-F033) ====================
 
 async function searchResorts(params: ReturnType<typeof parseSearchParams>) {
+  await client.connect();
+  const db = getDb();
+  const collection = db.collection<Resort>('resorts');
+
   const { page, limit, sort, query, locationType, starRating, priceMin, priceMax, resortType, amenities } = params;
 
-  // Build where clause
-  const where: any = {};
+  const mongoQuery: Record<string, unknown> = { isActive: true };
 
   if (query) {
-    where.OR = [
-      { name: { contains: query, mode: 'insensitive' } },
-      { description: { contains: query, mode: 'insensitive' } },
-      { address: { contains: query, mode: 'insensitive' } },
+    mongoQuery.$or = [
+      { name: { $regex: query, $options: 'i' } },
+      { description: { $regex: query, $options: 'i' } },
+      { address: { $regex: query, $options: 'i' } },
     ];
   }
-
-  if (locationType && locationType.length > 0) where.locationType = { in: locationType };
-  if (starRating && starRating.length > 0) where.starRating = { in: starRating };
+  if (locationType && locationType.length > 0) mongoQuery.location = { $in: locationType };
+  if (starRating && starRating.length > 0) mongoQuery.starRating = { $in: starRating };
   if (priceMin || priceMax) {
-    where.priceMin = {};
-    if (priceMin) where.priceMin.gte = priceMin;
-    if (priceMax) where.priceMax.lte = priceMax;
+    mongoQuery.priceMin = {};
+    if (priceMin) (mongoQuery.priceMin as Record<string, number>).$gte = priceMin;
+    if (priceMax) (mongoQuery.priceMin as Record<string, number>).$lte = priceMax;
   }
-  if (resortType && resortType.length > 0) where.resortType = { in: resortType };
+  if (resortType && resortType.length > 0) mongoQuery.resortType = { $in: resortType };
   if (amenities && amenities.length > 0) {
-    where.amenities = { hasEvery: amenities };
+    mongoQuery.amenities = { $all: amenities };
   }
 
-  // Execute query
-  const [resorts, total] = await Promise.all([
-    prisma.resort.findMany({
-      where,
-      orderBy: getOrderBy(sort),
-      skip: getSkip(page, limit),
-      take: limit,
-      select: {
-        id: true,
-        name: true,
-        address: true,
-        locationType: true,
-        starRating: true,
-        priceMin: true,
-        priceMax: true,
-        resortType: true,
-        amenities: true,
-        images: true,
-        rating: true,
-        latitude: true,
-        longitude: true,
-      }
-    }),
-    prisma.resort.count({ where }),
-  ]);
+  const sortOption: Record<string, 1 | -1> = {};
+  if (sort === SortOption.PRICE_ASC) sortOption.priceMin = 1;
+  else if (sort === SortOption.PRICE_DESC) sortOption.priceMin = -1;
+  else if (sort === SortOption.RATING_DESC) sortOption.rating = -1;
+  else sortOption.rating = -1;
 
-  return { results: resorts, total };
+  const total = await collection.countDocuments(mongoQuery);
+  const resorts = await collection
+    .find(mongoQuery)
+    .sort(sortOption)
+    .skip(getSkip(page, limit))
+    .limit(limit)
+    .toArray();
+
+  return {
+    results: resorts.map(r => ({ ...r, id: r._id?.toString() || r.id, image: r.images?.[0] })),
+    total,
+  };
 }
 
 // ==================== TOUR SEARCH (F051-F055) ====================
 
 async function searchTours(params: ReturnType<typeof parseSearchParams>) {
-  const { page, limit, sort, query, priceMin, priceMax, destination, startDate, endDate } = params;
+  await client.connect();
+  const db = getDb();
+  const collection = db.collection<TourPackage>('tours');
 
-  // Build where clause
-  const where: any = {};
+  const { page, limit, sort, query, priceMin, priceMax, destination, startDate, endDate, duration } = params;
+
+  const mongoQuery: Record<string, unknown> = { isActive: true };
 
   if (query) {
-    where.OR = [
-      { name: { contains: query, mode: 'insensitive' } },
-      { description: { contains: query, mode: 'insensitive' } },
+    mongoQuery.$or = [
+      { name: { $regex: query, $options: 'i' } },
+      { description: { $regex: query, $options: 'i' } },
     ];
   }
-
-  // F052: Filter by price range
   if (priceMin || priceMax) {
-    where.price = {};
-    if (priceMin) where.price.gte = priceMin;
-    if (priceMax) where.price.lte = priceMax;
+    mongoQuery.price = {};
+    if (priceMin) (mongoQuery.price as Record<string, number>).$gte = priceMin;
+    if (priceMax) (mongoQuery.price as Record<string, number>).$lte = priceMax;
   }
-
-  // F053: Filter by duration (number of days)
-  if (params.duration) {
-    where.duration = params.duration;
+  if (duration) {
+    mongoQuery.duration = duration;
   }
-
-  // F054: Filter by start date
-  if (startDate) {
-    where.startDate = { gte: new Date(startDate) };
-  }
-
-  // F055: Filter by destinations
   if (destination) {
-    where.destinations = { has: destination };
+    mongoQuery.destinations = destination;
+  }
+  if (startDate) {
+    mongoQuery.startDates = { $elemMatch: { $gte: startDate } };
   }
 
-  // Execute query
-  const [tours, total] = await Promise.all([
-    prisma.tourPackage.findMany({
-      where,
-      orderBy: getOrderBy(sort),
-      skip: getSkip(page, limit),
-      take: limit,
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        duration: true,
-        itinerary: true,
-        includes: true,
-        price: true,
-        discount: true,
-        startDate: true,
-        endDate: true,
-        destinations: true,
-        images: true,
-        rating: true,
-      }
-    }),
-    prisma.tourPackage.count({ where }),
-  ]);
+  const sortOption: Record<string, 1 | -1> = {};
+  if (sort === SortOption.PRICE_ASC) sortOption.price = 1;
+  else if (sort === SortOption.PRICE_DESC) sortOption.price = -1;
+  else if (sort === SortOption.RATING_DESC) sortOption.rating = -1;
+  else sortOption.rating = -1;
 
-  // Calculate discounted price for display
-  const results = tours.map(tour => ({
-    ...tour,
-    discountedPrice: tour.discount ? tour.price * (1 - tour.discount / 100) : tour.price,
-  }));
+  const total = await collection.countDocuments(mongoQuery);
+  const tours = await collection
+    .find(mongoQuery)
+    .sort(sortOption)
+    .skip(getSkip(page, limit))
+    .limit(limit)
+    .toArray();
 
-  return { results, total };
+  return {
+    results: tours.map(t => ({
+      ...t,
+      id: t._id?.toString() || t.id,
+      image: t.images?.[0],
+      discountedPrice: t.price,
+    })),
+    total,
+  };
 }
 
 // ==================== TRANSPORT SEARCH (F056-F060) ====================
 
 async function searchTransports(params: ReturnType<typeof parseSearchParams>) {
+  await client.connect();
+  const db = getDb();
+  const collection = db.collection<Vehicle>('vehicles');
+
   const { page, limit, sort, query, transportType, departure, arrival, priceMin, priceMax, company } = params;
 
-  // Build where clause
-  const where: any = {};
+  const mongoQuery: Record<string, unknown> = { isActive: true };
 
   if (query) {
-    where.OR = [
-      { route: { contains: query, mode: 'insensitive' } },
-      { company: { contains: query, mode: 'insensitive' } },
-      { type: { contains: query, mode: 'insensitive' } },
+    mongoQuery.$or = [
+      { name: { $regex: query, $options: 'i' } },
+      { route: { $regex: query, $options: 'i' } },
+      { provider: { $regex: query, $options: 'i' } },
     ];
   }
-
-  // F057: Filter by transport type (máy bay, xe khách, tàu hỏa, thuê xe, limousine)
   if (transportType && transportType.length > 0) {
-    where.type = { in: transportType };
+    mongoQuery.type = { $in: transportType };
   }
-
-  // F056: Filter by departure location
   if (departure) {
-    where.departure = { contains: departure, mode: 'insensitive' };
+    mongoQuery.departure = { $regex: departure, $options: 'i' };
   }
-
-  // F056: Filter by arrival location
   if (arrival) {
-    where.arrival = { contains: arrival, mode: 'insensitive' };
+    mongoQuery.arrival = { $regex: arrival, $options: 'i' };
   }
-
-  // F058: Filter by price range
   if (priceMin || priceMax) {
-    where.price = {};
-    if (priceMin) where.price.gte = priceMin;
-    if (priceMax) where.price.lte = priceMax;
+    mongoQuery.price = {};
+    if (priceMin) (mongoQuery.price as Record<string, number>).$gte = priceMin;
+    if (priceMax) (mongoQuery.price as Record<string, number>).$lte = priceMax;
   }
-
-  // F059: Filter by company/carrier
   if (company && company.length > 0) {
-    where.company = { in: company };
+    mongoQuery.provider = { $in: company };
   }
 
-  // Execute query
-  const [transports, total] = await Promise.all([
-    prisma.transport.findMany({
-      where,
-      orderBy: getOrderBy(sort),
-      skip: getSkip(page, limit),
-      take: limit,
-      select: {
-        id: true,
-        type: true,
-        route: true,
-        company: true,
-        departure: true,
-        arrival: true,
-        schedule: true,
-        price: true,
-        duration: true,
-        contact: true,
-      }
-    }),
-    prisma.transport.count({ where }),
-  ]);
+  const sortOption: Record<string, 1 | -1> = {};
+  if (sort === SortOption.PRICE_ASC) sortOption.price = 1;
+  else if (sort === SortOption.PRICE_DESC) sortOption.price = -1;
+  else if (sort === SortOption.RATING_DESC) sortOption.rating = -1;
+  else sortOption.price = 1;
 
-  return { results: transports, total };
+  const total = await collection.countDocuments(mongoQuery);
+  const transports = await collection
+    .find(mongoQuery)
+    .sort(sortOption)
+    .skip(getSkip(page, limit))
+    .limit(limit)
+    .toArray();
+
+  return {
+    results: transports.map(t => ({
+      ...t,
+      id: t._id?.toString() || t.id,
+    })),
+    total,
+  };
 }
 
-// ==================== MAIN HANDLER ====================
+// ==================== RANKING ALGORITHM (F064) ====================
+
+function calculateRelevanceScore(item: Record<string, unknown>, query: string): number {
+  if (!query) return 0;
+  const normalizedQuery = query.toLowerCase();
+  let score = 0;
+  if (String(item.name).toLowerCase() === normalizedQuery) score += 100;
+  else if (String(item.name).toLowerCase().includes(normalizedQuery)) score += 50;
+  if (String(item.description || '').toLowerCase().includes(normalizedQuery)) score += 20;
+  if (String(item.location || item.address || '').toLowerCase().includes(normalizedQuery)) score += 30;
+  return score;
+}
+
+function rankCombinedResults(results: any[], sortOption: SortOption, query?: string) {
+  const scoredResults = results.map(item => {
+    const relevanceScore = calculateRelevanceScore(item, query || '');
+    const hasDiscount = Boolean(item.discount);
+    const finalScore = Number(item.rating || 0) * 10 + relevanceScore + (hasDiscount ? 20 : 0);
+    return { ...item, relevanceScore, finalScore };
+  });
+
+  switch (sortOption) {
+    case SortOption.RATING_DESC:
+      return scoredResults.sort((a: any, b: any) => Number(b.rating || 0) - Number(a.rating || 0));
+    case SortOption.RATING_ASC:
+      return scoredResults.sort((a: any, b: any) => Number(a.rating || 0) - Number(b.rating || 0));
+    case SortOption.PRICE_ASC:
+      return scoredResults.sort((a: any, b: any) => Number(a.price || a.priceMin || 0) - Number(b.price || b.priceMin || 0));
+    case SortOption.PRICE_DESC:
+      return scoredResults.sort((a: any, b: any) => Number(b.price || b.priceMin || 0) - Number(a.price || a.priceMin || 0));
+    case SortOption.NAME_ASC:
+      return scoredResults.sort((a: any, b: any) => String(a.name || '').localeCompare(String(b.name || '')));
+    case SortOption.NAME_DESC:
+      return scoredResults.sort((a: any, b: any) => String(b.name || '').localeCompare(String(a.name || '')));
+    default:
+      return scoredResults.sort((a: any, b: any) => b.finalScore - a.finalScore);
+  }
+}
+
+// ==================== COMBO SEARCH (F067, F069) ====================
+
+interface ComboSearchBody {
+  totalBudget: number;
+  tourParams?: { destination?: string; duration?: string; startDate?: string };
+  hotelParams?: { city?: string; checkIn?: string; checkOut?: string; guests?: number };
+}
+
+async function searchCombo(body: ComboSearchBody) {
+  await client.connect();
+  const db = getDb();
+  const toursCollection = db.collection<TourPackage>('tours');
+  const hotelsCollection = db.collection<Hotel>('hotels');
+
+  const { totalBudget, tourParams, hotelParams } = body;
+  const maxTourPrice = totalBudget * 0.6;
+  const maxHotelPrice = totalBudget * 0.4;
+
+  const tourQuery: Record<string, unknown> = { isActive: true, price: { $lte: maxTourPrice } };
+  if (tourParams?.destination) tourQuery.destinations = tourParams.destination;
+  if (tourParams?.duration) tourQuery.duration = tourParams.duration;
+
+  const hotelQuery: Record<string, unknown> = { isActive: true, priceMin: { $lte: maxHotelPrice } };
+  if (hotelParams?.city) hotelQuery.city = { $regex: hotelParams.city, $options: 'i' };
+
+  const [tours, hotels] = await Promise.all([
+    toursCollection.find(tourQuery).sort({ rating: -1 }).limit(50).toArray(),
+    hotelsCollection.find(hotelQuery).sort({ rating: -1 }).limit(50).toArray(),
+  ]);
+
+  const combinations = [];
+  for (const tour of tours) {
+    const remainingBudget = totalBudget - tour.price;
+    for (const hotel of hotels) {
+      if (hotel.priceRange && Number(hotel.priceRange) <= remainingBudget) {
+        combinations.push({
+          tour: { ...tour, id: tour._id?.toString() || tour.id },
+          hotel: { ...hotel, id: hotel._id?.toString() || hotel.id },
+          totalPrice: tour.price + Number(hotel.priceRange),
+          savings: totalBudget - (tour.price + Number(hotel.priceRange)),
+        });
+      }
+    }
+  }
+
+  return combinations.filter(c => c.totalPrice <= totalBudget).sort((a, b) => b.savings - a.savings).slice(0, 20);
+}
+
+// ==================== MAIN HANDLERS ====================
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const params = parseSearchParams(searchParams);
-
     const { type, page, limit } = params;
 
     let searchResults;
-    let results: any[] = [];
+    let results: Record<string, unknown>[] = [];
     let total = 0;
 
-    // Route to appropriate search function
     switch (type) {
       case SearchType.SPOT:
         searchResults = await searchSpots(params);
         results = searchResults.results;
         total = searchResults.total;
         break;
-
       case SearchType.HOTEL:
         searchResults = await searchHotels(params);
         results = searchResults.results;
         total = searchResults.total;
         break;
-
       case SearchType.RESTAURANT:
         searchResults = await searchRestaurants(params);
         results = searchResults.results;
         total = searchResults.total;
         break;
-
       case SearchType.RESORT:
         searchResults = await searchResorts(params);
         results = searchResults.results;
         total = searchResults.total;
         break;
-
       case SearchType.TOUR:
         searchResults = await searchTours(params);
         results = searchResults.results;
         total = searchResults.total;
         break;
-
       case SearchType.TRANSPORT:
         searchResults = await searchTransports(params);
         results = searchResults.results;
         total = searchResults.total;
         break;
-
       default:
-        // F021: Multi-purpose search - search all types
         const [spots, hotels, restaurants, resorts, tours, transports] = await Promise.all([
-          searchSpots(params),
-          searchHotels(params),
-          searchRestaurants(params),
-          searchResorts(params),
-          searchTours(params),
-          searchTransports(params),
+          searchSpots({ ...params, page: 1, limit: 50 }),
+          searchHotels({ ...params, page: 1, limit: 50 }),
+          searchRestaurants({ ...params, page: 1, limit: 50 }),
+          searchResorts({ ...params, page: 1, limit: 50 }),
+          searchTours({ ...params, page: 1, limit: 50 }),
+          searchTransports({ ...params, page: 1, limit: 50 }),
         ]);
 
-        // Merge results
         results = [
-          ...spots.results.map(r => ({ ...r, searchType: SearchType.SPOT })),
-          ...hotels.results.map(r => ({ ...r, searchType: SearchType.HOTEL })),
-          ...restaurants.results.map(r => ({ ...r, searchType: SearchType.RESTAURANT })),
-          ...resorts.results.map(r => ({ ...r, searchType: SearchType.RESORT })),
-          ...tours.results.map(r => ({ ...r, searchType: SearchType.TOUR })),
-          ...transports.results.map(r => ({ ...r, searchType: SearchType.TRANSPORT })),
+          ...spots.results.map((r: Record<string, unknown>) => ({ ...r, searchType: SearchType.SPOT })),
+          ...hotels.results.map((r: Record<string, unknown>) => ({ ...r, searchType: SearchType.HOTEL })),
+          ...restaurants.results.map((r: Record<string, unknown>) => ({ ...r, searchType: SearchType.RESTAURANT })),
+          ...resorts.results.map((r: Record<string, unknown>) => ({ ...r, searchType: SearchType.RESORT })),
+          ...tours.results.map((r: Record<string, unknown>) => ({ ...r, searchType: SearchType.TOUR })),
+          ...transports.results.map((r: Record<string, unknown>) => ({ ...r, searchType: SearchType.TRANSPORT })),
         ];
         total = spots.total + hotels.total + restaurants.total + resorts.total + tours.total + transports.total;
 
-        // Sort combined results
-        if (params.sort === SortOption.RATING_DESC) {
-          results.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-        } else if (params.sort === SortOption.PRICE_ASC) {
-          results.sort((a, b) => (a.priceMin || a.price || 0) - (b.priceMin || b.price || 0));
+        results = rankCombinedResults(results, params.sort, params.query);
+
+        if (params.priceMin || params.priceMax) {
+          results = results.filter(item => {
+            const price = Number(item.price || item.priceMin || 0);
+            return (!params.priceMin || price >= params.priceMin) && (!params.priceMax || price <= params.priceMax);
+          });
+          total = results.length;
         }
+
+        results = results.slice(getSkip(page, limit), getSkip(page, limit) + limit);
         break;
     }
 
-    // F037: Pagination response
     const totalPages = Math.ceil(total / limit);
-
     return NextResponse.json({
       data: results,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1,
-      },
+      pagination: { page, limit, total, totalPages, hasNext: page < totalPages, hasPrev: page > 1 },
     });
-
   } catch (error) {
     console.error('Search error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body: ComboSearchBody = await request.json();
+    if (!body.totalBudget || body.totalBudget <= 0) {
+      return NextResponse.json({ error: 'Invalid budget' }, { status: 400 });
+    }
+
+    const results = await searchCombo(body);
+    return NextResponse.json({
+      data: results,
+      summary: {
+        totalCombinations: results.length,
+        averagePrice: results.length > 0 ? results.reduce((sum, r) => sum + r.totalPrice, 0) / results.length : 0,
+        bestValue: results[0] || null,
+      },
+    });
+  } catch (error) {
+    console.error('Combo search error:', error);
+    return NextResponse.json({ error: 'Combo search failed' }, { status: 500 });
   }
 }

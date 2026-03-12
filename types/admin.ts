@@ -11,6 +11,7 @@ export interface TouristSpot {
   bestTime: string;
   ticketPrice?: string;
   isActive: boolean;
+  tourCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -30,8 +31,26 @@ export interface Hotel {
   isActive: boolean;
   contactPhone?: string;
   contactEmail?: string;
+  roomTypes?: RoomType[];
+  reviews?: HotelReview[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface HotelReview {
+  id: string;
+  hotelId: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  rating: number;
+  comment: string;
+  images?: string[];
+  createdAt: string;
+  response?: {
+    content: string;
+    respondedAt: string;
+  };
 }
 
 export interface Restaurant {
@@ -75,12 +94,32 @@ export interface RoomType {
   id: string;
   name: string;
   description: string;
-  price: number;
+  price?: number;
+  basePrice?: number;
   capacity: number;
+  maxCapacity?: number;
   amenities: string[];
   images: string[];
+  available?: number;
+  total?: number;
+  totalRooms?: number;
+  availableRooms?: number;
+  pricing?: RoomPricing[];
+  availability?: RoomAvailability[];
+}
+
+export interface RoomPricing {
+  id?: string;
+  date: string;
+  price: number;
+  isSpecial?: boolean;
+  specialReason?: string;
+}
+
+export interface RoomAvailability {
+  date: string;
   available: number;
-  total: number;
+  booked?: number;
 }
 
 export interface Vehicle {
@@ -95,6 +134,8 @@ export interface Vehicle {
   price: number;
   images: string[];
   isActive: boolean;
+  contact?: string;
+  rating?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -106,10 +147,13 @@ export interface TourPackage {
   duration: string;
   destinations: string[];
   price: number;
+  discount?: number;
   groupSize: number;
   startDates: string[];
   includedServices: string[];
   excludedServices: string[];
+  includes?: string[];
+  excludes?: string[];
   itinerary: ItineraryDay[];
   images: string[];
   guideId?: string;
@@ -152,16 +196,22 @@ export interface Promotion {
   id: string;
   name: string;
   description: string;
-  discountType: 'percentage' | 'fixed';
-  discountValue: number;
+  discountType?: 'percentage' | 'fixed';
+  discountValue?: number;
+  discountPercent?: number;
+  promoCode?: string;
+  code?: string;
   startDate: string;
   endDate: string;
-  applicableItems: {
+  applicableItems?: {
     type: 'tour' | 'hotel' | 'vehicle' | 'all';
     ids: string[];
   };
-  isActive: boolean;
-  showOnHome: boolean;
+  targetType?: string;
+  targetId?: string;
+  isActive?: boolean;
+  showOnHome?: boolean;
+  isShowHome?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -169,16 +219,23 @@ export interface Promotion {
 export interface Contact {
   id: string;
   name: string;
+  fullName?: string;
   email: string;
   phone?: string;
   address?: string;
   subject: string;
+  title?: string;
   message: string;
   service?: string;
+  serviceType?: string;
   preferredDate?: string;
+  desiredDate?: string;
   guestCount?: string;
   rating?: number;
   isRead: boolean;
+  status?: 'pending' | 'replied' | 'processed';
+  replyMessage?: string;
+  repliedAt?: string;
   createdAt: string;
 }
 
