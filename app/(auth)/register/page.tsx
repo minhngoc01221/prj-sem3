@@ -183,8 +183,16 @@ export default function RegisterPage() {
       // Simulate API call - Replace with actual API
       await new Promise((resolve) => setTimeout(resolve, 1500))
       
-      // Redirect to login after successful registration
-      router.push("/login?registered=true")
+      // Save user to localStorage (auto-login after registration)
+      const user = {
+        id: "1",
+        name: formData.fullName,
+        email: formData.email,
+      }
+      localStorage.setItem("user", JSON.stringify(user))
+      
+      // Redirect to home after successful registration
+      router.push("/")
     } catch (error) {
       setErrors({
         general: "Đăng ký thất bại. Vui lòng thử lại sau.",

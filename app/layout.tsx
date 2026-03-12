@@ -12,9 +12,9 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Du Lịch Việt - Khám Phá Vẻ Đẹp Miền Nam",
-  description: "Công ty du lịch hàng đầu Việt Nam. Đặt tour, khách sạn, resort và trải nghiệm du lịch đáng nhớ.",
-  keywords: ["du lịch", "tour", "khách sạn", "resort", "việt nam", "travel"],
+  title: "Karnel Travels - Discover Vietnam",
+  description: "Leading travel company in Vietnam. Book tours, hotels, resorts and experience memorable journeys.",
+  keywords: ["travel", "tour", "hotel", "resort", "vietnam", "karnel travels"],
 };
 
 export default function RootLayout({
@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" className={dmSans.variable}>
+    <html lang="en" className={dmSans.variable}>
       <body className="font-sans antialiased">
         <AuthProvider>
           <UserNavbar />

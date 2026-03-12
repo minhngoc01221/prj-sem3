@@ -99,6 +99,14 @@ export default function LoginPage() {
       // Simulate API call - Replace with actual API
       await new Promise((resolve) => setTimeout(resolve, 1500))
       
+      // Save user to localStorage (simulate successful login)
+      const user = {
+        id: "1",
+        name: formData.email.split("@")[0],
+        email: formData.email,
+      }
+      localStorage.setItem("user", JSON.stringify(user))
+      
       // Redirect to home after successful login
       router.push("/")
     } catch (error) {

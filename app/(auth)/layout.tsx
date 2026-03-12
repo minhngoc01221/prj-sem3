@@ -9,8 +9,8 @@ const dmSans = DM_Sans({
 })
 
 export const metadata: Metadata = {
-  title: "Đăng nhập - Du Lịch Việt",
-  description: "Đăng nhập vào hệ thống Du Lịch Việt để đặt tour và trải nghiệm dịch vụ du lịch hàng đầu.",
+  title: "Login - Karnel Travels",
+  description: "Login to Karnel Travels to book tours and experience premium travel services.",
 }
 
 export default function AuthRootLayout({
@@ -19,10 +19,8 @@ export default function AuthRootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="vi" className={dmSans.variable}>
-      <body className="font-sans antialiased">
-        {children}
-      </body>
-    </html>
+    <div className="font-sans antialiased">
+      {children}
+    </div>
   )
 }
