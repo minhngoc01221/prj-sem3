@@ -13,7 +13,7 @@ model User {
   email     String   @unique
   password  String
   name      String?
-  role      String   @default("admin")
+  role      String   @default("admin") // admin, super_admin
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -27,8 +27,8 @@ model TouristSpot {
   name        String
   description String
   location    String
-  region      String
-  type        String
+  region      String   // Bắc, Trung, Nam
+  type        String   // bãi biển, núi, di tích, thác nước...
   images      String[]
   activities  String[]
   bestTime    String?
@@ -40,87 +40,42 @@ model TouristSpot {
   @@map("tourist_spots")
 }
 
-// Model for Hotels - simplified without relations
+// Model for Hotels
 model Hotel {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   address     String
   city        String
-  starRating  Int
+  starRating  Int      // 1-5 sao
   priceMin    Float
   priceMax    Float
-  amenities   String[]
+  amenities   String[] // wifi, bể bơi, nhà hàng, spa...
   images      String[]
   description String
+  rooms       Room[]
   rating      Float    @default(0)
   latitude    Float?
   longitude   Float?
   contact     String?
   policies    String?
-  isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@map("hotels")
 }
 
-// Model for Rooms - without relations
 model Room {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  hotelId     String
-  type        String
-  description String?
+  hotelId     String   @db.ObjectId
+  type        String   // Standard, Deluxe, Suite...
   price       Float
-  basePrice   Float
-  available   Int
-  totalRooms  Int
+  available   Int      // Số phòng trống
   maxGuests   Int
   amenities   String[]
   images      String[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  hotel       Hotel    @relation(fields: [hotelId], references: [id])
 
   @@map("rooms")
-}
-
-// Model for Room Pricing
-model RoomPricing {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  roomId        String
-  date          String
-  price         Float
-  isSpecial     Boolean  @default(false)
-  specialReason String?
-
-  @@map("room_pricing")
-}
-
-// Model for Room Availability
-model RoomAvailability {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  roomId      String
-  date        String
-  available   Int
-  booked      Int      @default(0)
-
-  @@map("room_availability")
-}
-
-// Model for Hotel Reviews
-model HotelReview {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  hotelId     String
-  userId      String?
-  userName    String
-  userAvatar  String?
-  rating      Int
-  comment     String
-  images      String[]
-  response    String?
-  respondedAt DateTime?
-  createdAt   DateTime @default(now())
-
-  @@map("hotel_reviews")
 }
 
 // Model for Restaurants
@@ -129,12 +84,13 @@ model Restaurant {
   name        String
   address     String
   city        String
-  cuisineType String
-  priceRange  String
-  style       String
+  cuisineType String   // Việt, Trung, Nhật, Hàn, Ý, hải sản...
+  priceRange  String   // bình dân, trung cấp, cao cấp
+  style       String   // quán ăn, nhà hàng, cafe, bar...
   openTime    String
   closeTime   String
   images      String[]
+  menu        MenuItem[]
   rating      Float    @default(0)
   latitude    Float?
   longitude   Float?
@@ -147,53 +103,54 @@ model Restaurant {
 }
 
 model MenuItem {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
-  restaurantId String
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  restaurantId String     @db.ObjectId
   name         String
   description  String?
   price        Float
   category     String?
   image        String?
-  createdAt    DateTime @default(now())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
 
   @@map("menu_items")
 }
 
 // Model for Resorts
 model Resort {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  name          String
-  address       String
-  locationType  String
-  starRating    Int
-  priceMin      Float
-  priceMax      Float
-  resortType    String
-  amenities     String[]
-  images        String[]
-  description   String
-  activities    String[]
-  rating        Float    @default(0)
-  latitude      Float?
-  longitude     Float?
-  contact       String?
-  packages      String[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  address     String
+  locationType String  // biển, núi, hồ, đảo...
+  starRating  Int
+  priceMin    Float
+  priceMax    Float
+  resortType  String   // biển, núi, sinh thái, spa...
+  amenities   String[]
+  images      String[]
+  description String
+  activities  String[]
+  rooms       ResortRoom[]
+  rating      Float    @default(0)
+  latitude    Float?
+  longitude   Float?
+  contact     String?
+  packages    String[] // gói combo
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("resorts")
 }
 
 model ResortRoom {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  resortId   String
-  type       String
+  resortId   String   @db.ObjectId
+  type       String   // Bungalow, Villa, Suite...
   price      Float
   available  Int
   maxGuests  Int
   amenities  String[]
   images     String[]
-  createdAt  DateTime @default(now())
+  resort     Resort   @relation(fields: [resortId], references: [id])
 
   @@map("resort_rooms")
 }
@@ -201,14 +158,14 @@ model ResortRoom {
 // Model for Transport
 model Transport {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  type        String
-  route       String
-  company     String
-  departure   String
-  arrival     String
-  schedule    String
+  type        String   // máy bay, xe khách, tàu hỏa, thuê xe, limousine
+  route       String   // tuyến đường
+  company     String   // nhà xe, hãng hàng không
+  departure   String   // điểm đi
+  arrival     String   // điểm đến
+  schedule    String   // lịch trình
   price       Float
-  duration    String
+  duration    String   // thời gian di chuyển
   contact     String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -218,63 +175,58 @@ model Transport {
 
 // Model for Tour Packages
 model TourPackage {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
-  name         String
-  description  String
-  duration     String
-  itinerary    String[]
-  includes     String[]
-  price        Float
-  discount     Float?   @default(0)
-  startDate    DateTime?
-  endDate      DateTime?
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String
+  duration    String   // số ngày
+  itinerary   String[]
+  includes    String[]  // dịch vụ bao gồm
+  price       Float
+  discount    Float?    @default(0)
+  startDate   DateTime?
+  endDate     DateTime?
   destinations String[]
-  images       String[]
-  rating       Float    @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  images      String[]
+  rating      Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("tour_packages")
 }
 
-// Model for Promotions (F201-F210)
+// Model for Promotions
 model Promotion {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  promoCode     String   @unique
-  name          String
-  description   String?
-  discountPercent Float   // 0-100
-  startDate     DateTime @map("start_date")
-  endDate       DateTime @map("end_date")
-  targetType    String?  // "Tour" | "Hotel" | "All"
-  targetId      String?  // ID của Tour hoặc Hotel cụ thể (null = áp dụng cho tất cả)
-  status        String   @default("active") // "active" | "inactive"
-  isShowHome    Boolean  @default(false)  @map("is_show_home")
-  createdAt     DateTime @default(now())   @map("created_at")
-  updatedAt     DateTime @updatedAt
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String
+  discount    Float    // phần trăm giảm giá
+  startDate   DateTime
+  endDate     DateTime
+  code        String?  // mã giảm giá
+  applicableTo String? // loại đối tượng áp dụng
+  conditions  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("promotions")
 }
 
 // Model for Contact/Feedback
 model Contact {
-  id           String    @id @default(auto()) @map("_id") @db.ObjectId
-  fullName     String
-  email        String
-  phone        String?
-  address      String?
-  serviceType  String?   @map("service_type")
-  desiredDate  DateTime? @map("desired_date")
-  groupSize    Int?      @map("group_size")
-  title        String?   @map("title")
-  message      String
-  rating       Int?
-  status       String    @default("unread") // "unread" | "read" | "replied"
-  replyMessage String?   @map("reply_message")
-  repliedAt    DateTime? @map("replied_at")
-  repliedBy    String?   @map("replied_by")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  fullName    String
+  email       String
+  phone       String
+  address     String?
+  serviceType String?  // dịch vụ quan tâm
+  desiredDate DateTime?
+  groupSize   Int?     // số người
+  message     String
+  rating      Int?     // 1-5 sao cho feedback
+  title       String?  // tiêu đề feedback
+  status      String   @default("pending") // pending, processed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("contacts")
 }
@@ -289,75 +241,33 @@ model CompanyInfo {
   services    String[]
   awards      String[]
   images      String[]
+  contactInfo ContactDetail?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@map("company_info")
 }
 
-// Settings Key-Value (F227)
-model Setting {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  key       String   @unique
-  value     String
-  type      String   @default("text") // text, number, boolean, json
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("settings")
-}
-
-// Navigation Menu (F231)
-model NavigationMenu {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
-  url       String
-  icon      String?
-  position  Int      @default(0)
-  parentId  String?  @map("parent_id") @db.ObjectId
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-
-  @@map("navigation_menus")
-}
-
-// Banners (F232)
-model Banner {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  title       String
-  description String?
-  imageUrl    String   @map("image_url")
-  linkUrl     String?  @map("link_url")
-  position    Int      @default(0)
-  isActive    Boolean  @default(true) @map("is_active")
-  startDate   DateTime? @map("start_date")
-  endDate     DateTime? @map("end_date")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  @@map("banners")
-}
-
 model ContactDetail {
-  id             String       @id @default(auto()) @map("_id") @db.ObjectId
-  companyInfoId  String       @unique
-  address        String
-  phone          String
-  email          String
-  website        String?
-  workingHours   String
-  createdAt      DateTime     @default(now())
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  companyInfoId String    @unique @db.ObjectId
+  address      String
+  phone        String
+  email        String
+  website      String?
+  workingHours String
+  socialLinks  SocialLink[]
+  companyInfo  CompanyInfo @relation(fields: [companyInfoId], references: [id])
 
   @@map("contact_details")
 }
 
 model SocialLink {
-  id              String       @id @default(auto()) @map("_id") @db.ObjectId
-  contactDetailId String
-  platform        String
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  contactDetailId String        @db.ObjectId
+  platform        String        // Facebook, Instagram, Zalo, YouTube
   url             String
-  createdAt       DateTime     @default(now())
+  contactDetail   ContactDetail @relation(fields: [contactDetailId], references: [id])
 
   @@map("social_links")
 }

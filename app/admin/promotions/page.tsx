@@ -3,8 +3,6 @@ import { PromotionsManagementContent } from '@/components/admin/promotions/Promo
 import PromotionsLoading from './loading';
 import type { Promotion } from '@/types/admin';
 
-export const dynamic = 'force-dynamic';
-
 async function getPromotions(): Promise<Promotion[]> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';

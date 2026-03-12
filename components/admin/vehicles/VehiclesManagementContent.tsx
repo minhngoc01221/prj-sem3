@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { 
   Bus, 
@@ -16,19 +16,16 @@ import {
   ChevronRight,
   Clock,
   DollarSign,
-  Route,
-  AlertTriangle,
-  Loader2
+  Route
 } from 'lucide-react';
 import type { Vehicle } from '@/types/admin';
-import { VehicleFormModal } from './VehicleFormModal';
 
 interface VehiclesManagementContentProps {
   vehicles: Vehicle[];
   isLoading: boolean;
 }
 
-const vehicleTypeLabels: Record<string, string> = {
+const vehicleTypeLabels = {
   bus: 'Xe khách',
   limousine: 'Limousine',
   airplane: 'Máy bay',
@@ -37,34 +34,17 @@ const vehicleTypeLabels: Record<string, string> = {
 };
 
 export function VehiclesManagementContent({ vehicles: initialVehicles, isLoading }: VehiclesManagementContentProps) {
-  const [vehicles, setVehicles] = useState<Vehicle[]>(initialVehicles);
+  const [vehicles, setVehicles] = useState(initialVehicles);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedVehicles, setSelectedVehicles] = useState<string[]>([]);
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [vehicleToDelete, setVehicleToDelete] = useState<Vehicle | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    setVehicles(initialVehicles);
-  }, [initialVehicles]);
-
-  const showNotification = (type: 'success' | 'error', message: string) => {
-    setNotification({ type, message });
-    setTimeout(() => setNotification(null), 3000);
-  };
-
   const filteredVehicles = vehicles.filter(vehicle => {
-    const matchesSearch = (vehicle.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (vehicle.provider?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (vehicle.route?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    const matchesSearch = vehicle.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      vehicle.provider.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      vehicle.route.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = typeFilter === 'all' || vehicle.type === typeFilter;
     return matchesSearch && matchesType;
   });
@@ -89,119 +69,10 @@ export function VehiclesManagementContent({ vehicles: initialVehicles, isLoading
     );
   };
 
-  const handleToggleActive = async (id: string) => {
-    const vehicle = vehicles.find(v => v.id === id);
-    if (!vehicle) return;
-
-    try {
-      const response = await fetch(`/api/admin/vehicles/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isActive: !vehicle.isActive })
-      });
-      const result = await response.json();
-
-      if (result.success) {
-        setVehicles(prev => prev.map(v => 
-          v.id === id ? { ...v, isActive: !v.isActive } : v
-        ));
-        showNotification('success', 'Cập nhật trạng thái thành công');
-      } else {
-        showNotification('error', result.message || 'Cập nhật trạng thái thất bại');
-      }
-    } catch (error) {
-      console.error('Error toggling vehicle status:', error);
-      showNotification('error', 'Có lỗi xảy ra khi cập nhật trạng thái');
-    }
-  };
-
-  const handleAddNew = () => {
-    setFormMode('add');
-    setSelectedVehicle(null);
-    setIsFormModalOpen(true);
-  };
-
-  const handleEdit = (vehicle: Vehicle) => {
-    setFormMode('edit');
-    setSelectedVehicle(vehicle);
-    setIsFormModalOpen(true);
-  };
-
-  const handleFormSubmit = async (data: Partial<Vehicle>) => {
-    try {
-      if (formMode === 'add') {
-        const response = await fetch('/api/admin/vehicles', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        const result = await response.json();
-
-        if (result.success) {
-          const newVehicle: Vehicle = {
-            ...data,
-            id: result.data._id?.toString() || String(Date.now()),
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          } as Vehicle;
-          setVehicles(prev => [newVehicle, ...prev]);
-          showNotification('success', 'Thêm phương tiện thành công');
-        } else {
-          showNotification('error', result.message || 'Thêm phương tiện thất bại');
-        }
-      } else if (selectedVehicle) {
-        const response = await fetch(`/api/admin/vehicles/${selectedVehicle.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        const result = await response.json();
-
-        if (result.success) {
-          setVehicles(prev => prev.map(v => 
-            v.id === selectedVehicle.id ? { ...v, ...data, updatedAt: new Date().toISOString() } : v
-          ));
-          showNotification('success', 'Cập nhật phương tiện thành công');
-        } else {
-          showNotification('error', result.message || 'Cập nhật phương tiện thất bại');
-        }
-      }
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      showNotification('error', 'Có lỗi xảy ra khi lưu phương tiện');
-    }
-  };
-
-  const handleDeleteClick = (vehicle: Vehicle) => {
-    setVehicleToDelete(vehicle);
-    setIsDeleteModalOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!vehicleToDelete) return;
-
-    setIsDeleting(true);
-    try {
-      const response = await fetch(`/api/admin/vehicles/${vehicleToDelete.id}`, {
-        method: 'DELETE'
-      });
-      const result = await response.json();
-
-      if (result.success) {
-        setVehicles(prev => prev.filter(v => v.id !== vehicleToDelete.id));
-        showNotification('success', 'Xóa phương tiện thành công');
-      } else {
-        showNotification('error', result.message || 'Xóa phương tiện thất bại');
-      }
-    } catch (error) {
-      console.error('Error deleting vehicle:', error);
-      showNotification('error', 'Có lỗi xảy ra khi xóa phương tiện');
-    } finally {
-      setIsDeleting(false);
-      setIsDeleteModalOpen(false);
-      setVehicleToDelete(null);
-    }
+  const handleToggleActive = (id: string) => {
+    setVehicles(prev => prev.map(v => 
+      v.id === id ? { ...v, isActive: !v.isActive } : v
+    ));
   };
 
   if (isLoading) {
@@ -224,28 +95,19 @@ export function VehiclesManagementContent({ vehicles: initialVehicles, isLoading
 
   return (
     <div className="space-y-6">
-      {/* Notification */}
-      {notification && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg ${
-          notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-        }`}>
-          {notification.message}
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Quản lý phương tiện</h1>
           <p className="text-gray-500 mt-1">Quản lý tất cả phương tiện vận chuyển trong hệ thống</p>
         </div>
-        <button 
-          onClick={handleAddNew}
+        <Link 
+          href="/admin/vehicles/new"
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
         >
           <Plus className="w-5 h-5" />
           Thêm phương tiện
-        </button>
+        </Link>
       </div>
 
       {/* Stats */}
@@ -355,112 +217,100 @@ export function VehiclesManagementContent({ vehicles: initialVehicles, isLoading
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {paginatedVehicles.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
-                    <div className="flex flex-col items-center">
-                      <Bus className="w-12 h-12 text-gray-300 mb-3" />
-                      <p>Không tìm thấy phương tiện nào</p>
+              {paginatedVehicles.map((vehicle) => (
+                <tr key={vehicle.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedVehicles.includes(vehicle.id)}
+                      onChange={() => handleSelectVehicle(vehicle.id)}
+                      className="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                    />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
+                      {vehicle.images && vehicle.images.length > 0 ? (
+                        <img 
+                          src={vehicle.images[0]} 
+                          alt={vehicle.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ImageIcon className="w-6 h-6 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div>
+                      <p className="font-medium text-gray-900">{vehicle.name}</p>
+                      <p className="text-sm text-gray-500">{vehicle.type}</p>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                      {vehicleTypeLabels[vehicle.type]}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-gray-600">{vehicle.provider}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-1 text-gray-600">
+                      <Route className="w-4 h-4" />
+                      {vehicle.departure} → {vehicle.arrival}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-gray-600">
+                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(vehicle.price)}
+                  </td>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => handleToggleActive(vehicle.id)}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium ${
+                        vehicle.isActive 
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {vehicle.isActive ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          Hoạt động
+                        </>
+                      ) : (
+                        <>
+                          <X className="w-3.5 h-3.5" />
+                          Tắt
+                        </>
+                      )}
+                    </button>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/admin/vehicles/${vehicle.id}`}
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Xem chi tiết"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Link>
+                      <Link
+                        href={`/admin/vehicles/${vehicle.id}/edit`}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Chỉnh sửa"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Link>
+                      <button
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Xóa"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
-              ) : (
-                paginatedVehicles.map((vehicle) => (
-                  <tr key={vehicle.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedVehicles.includes(vehicle.id)}
-                        onChange={() => handleSelectVehicle(vehicle.id)}
-                        className="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
-                        {vehicle.images && vehicle.images.length > 0 ? (
-                          <img 
-                            src={vehicle.images[0]} 
-                            alt={vehicle.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <ImageIcon className="w-6 h-6 text-gray-400" />
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="font-medium text-gray-900">{vehicle.name}</p>
-                        <p className="text-sm text-gray-500">{vehicleTypeLabels[vehicle.type]}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                        {vehicleTypeLabels[vehicle.type]}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">{vehicle.provider}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1 text-gray-600">
-                        <Route className="w-4 h-4" />
-                        {vehicle.departure} → {vehicle.arrival}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">
-                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(vehicle.price)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <button
-                        onClick={() => handleToggleActive(vehicle.id)}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium ${
-                          vehicle.isActive 
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        {vehicle.isActive ? (
-                          <>
-                            <Check className="w-3.5 h-3.5" />
-                            Hoạt động
-                          </>
-                        ) : (
-                          <>
-                            <X className="w-3.5 h-3.5" />
-                            Tắt
-                          </>
-                        )}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/admin/vehicles/${vehicle.id}`}
-                          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                          title="Xem chi tiết"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Link>
-                        <button
-                          onClick={() => handleEdit(vehicle)}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Chỉnh sửa"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(vehicle)}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Xóa"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
         </div>
@@ -506,59 +356,6 @@ export function VehiclesManagementContent({ vehicles: initialVehicles, isLoading
           </div>
         )}
       </div>
-
-      {/* Form Modal */}
-      <VehicleFormModal
-        isOpen={isFormModalOpen}
-        onClose={() => setIsFormModalOpen(false)}
-        onSubmit={handleFormSubmit}
-        vehicle={selectedVehicle}
-        mode={formMode}
-      />
-
-      {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setIsDeleteModalOpen(false)}></div>
-          <div className="relative bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="p-3 bg-red-100 rounded-full">
-                <AlertTriangle className="w-6 h-6 text-red-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Xác nhận xóa</h3>
-                <p className="text-sm text-gray-500">Hành động này không thể hoàn tác</p>
-              </div>
-            </div>
-            <p className="text-gray-600 mb-6">
-              Bạn có chắc chắn muốn xóa phương tiện <strong>{vehicleToDelete?.name}</strong> không?
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                disabled={isDeleting}
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleDeleteConfirm}
-                disabled={isDeleting}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
-              >
-                {isDeleting ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Đang xóa...
-                  </span>
-                ) : (
-                  'Xóa'
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

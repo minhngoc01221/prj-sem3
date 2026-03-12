@@ -1,7 +1,6 @@
 export interface TouristSpot {
   id: string;
   name: string;
-  slug?: string;
   description: string;
   location: string;
   region: 'north' | 'central' | 'south';
@@ -9,12 +8,9 @@ export interface TouristSpot {
   images: string[];
   rating: number;
   reviewCount: number;
-  bestTime?: string;
+  bestTime: string;
   ticketPrice?: string;
-  highlights?: string[];
-  tips?: string[];
   isActive: boolean;
-  tourCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -34,56 +30,8 @@ export interface Hotel {
   isActive: boolean;
   contactPhone?: string;
   contactEmail?: string;
-  roomTypes?: RoomType[];
-  reviews?: HotelReview[];
   createdAt: string;
   updatedAt: string;
-}
-
-export interface RoomType {
-  id: string;
-  name: string;
-  description: string;
-  basePrice: number;
-  capacity: number;
-  maxCapacity: number;
-  amenities: string[];
-  images: string[];
-  totalRooms: number;
-  availableRooms: number;
-  pricing: RoomPricing[];
-  availability: RoomAvailability[];
-}
-
-export interface RoomPricing {
-  id: string;
-  date: string;
-  price: number;
-  isSpecial: boolean;
-  specialReason?: string;
-}
-
-export interface RoomAvailability {
-  id: string;
-  date: string;
-  available: number;
-  booked: number;
-}
-
-export interface HotelReview {
-  id: string;
-  hotelId: string;
-  userId: string;
-  userName: string;
-  userAvatar?: string;
-  rating: number;
-  comment: string;
-  images?: string[];
-  createdAt: string;
-  response?: {
-    content: string;
-    respondedAt: string;
-  };
 }
 
 export interface Restaurant {
@@ -101,7 +49,6 @@ export interface Restaurant {
   reviewCount: number;
   isActive: boolean;
   contactPhone?: string;
-  menu?: any[];
   createdAt: string;
   updatedAt: string;
 }
@@ -124,6 +71,18 @@ export interface Resort {
   updatedAt: string;
 }
 
+export interface RoomType {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  capacity: number;
+  amenities: string[];
+  images: string[];
+  available: number;
+  total: number;
+}
+
 export interface Vehicle {
   id: string;
   type: 'bus' | 'limousine' | 'airplane' | 'train' | 'car';
@@ -136,11 +95,6 @@ export interface Vehicle {
   price: number;
   images: string[];
   isActive: boolean;
-  contact?: string;
-  description?: string;
-  amenities?: string[];
-  capacity?: number;
-  duration?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -152,17 +106,15 @@ export interface TourPackage {
   duration: string;
   destinations: string[];
   price: number;
-  discount?: number;
   groupSize: number;
   startDates: string[];
-  includes: string[];
+  includedServices: string[];
   excludedServices: string[];
   itinerary: ItineraryDay[];
   images: string[];
   guideId?: string;
   isActive: boolean;
   bookingCount: number;
-  rating?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -198,38 +150,36 @@ export interface Booking {
 
 export interface Promotion {
   id: string;
-  promoCode: string;
   name: string;
-  description?: string;
-  discountPercent: number;
+  description: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
   startDate: string;
   endDate: string;
-  targetType?: 'Tour' | 'Hotel' | null;
-  targetId?: string | null;
-  status: 'active' | 'inactive' | 'expired' | 'scheduled';
-  isShowHome: boolean;
+  applicableItems: {
+    type: 'tour' | 'hotel' | 'vehicle' | 'all';
+    ids: string[];
+  };
+  isActive: boolean;
+  showOnHome: boolean;
   createdAt: string;
-  updatedAt?: string;
+  updatedAt: string;
 }
 
 export interface Contact {
   id: string;
-  fullName: string;
+  name: string;
   email: string;
   phone?: string;
   address?: string;
-  serviceType?: string;
-  desiredDate?: string;
-  groupSize?: number;
-  title?: string;
+  subject: string;
   message: string;
+  service?: string;
+  preferredDate?: string;
+  guestCount?: string;
   rating?: number;
-  status: 'unread' | 'read' | 'replied';
-  replyMessage?: string;
-  repliedAt?: string;
-  repliedBy?: string;
+  isRead: boolean;
   createdAt: string;
-  updatedAt?: string;
 }
 
 export interface User {

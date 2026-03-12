@@ -3,8 +3,6 @@ import { UsersManagementContent } from '@/components/admin/users/UsersManagement
 import UsersLoading from './loading';
 import type { User } from '@/types/admin';
 
-export const dynamic = 'force-dynamic';
-
 async function getUsers(): Promise<User[]> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';

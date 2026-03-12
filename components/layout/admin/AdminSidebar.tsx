@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -20,7 +20,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Map,
-  GripVertical,
 } from "lucide-react";
 
 interface MenuItem {
@@ -74,64 +73,13 @@ interface AdminSidebarProps {
   onToggle?: () => void;
 }
 
-export default function AdminSidebar({ isCollapsed: externalCollapsed, onToggle: externalOnToggle }: AdminSidebarProps) {
+export default function AdminSidebar({ isCollapsed = false, onToggle }: AdminSidebarProps) {
   const [internalCollapsed, setInternalCollapsed] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
   const pathname = usePathname();
   
-  // Use external state if provided
-  const isCollapsed = externalCollapsed !== undefined ? externalCollapsed : internalCollapsed;
-  const handleToggle = externalOnToggle || (() => setInternalCollapsed(!internalCollapsed));
-
-  // Handle drag to resize
-  useEffect(() => {
-    let startX = 0;
-    let startWidth = 0;
-
-    const handleMouseDown = (e: MouseEvent) => {
-      const sidebar = document.getElementById('admin-sidebar');
-      if (!sidebar) return;
-      
-      const rect = sidebar.getBoundingClientRect();
-      if (Math.abs(e.clientX - rect.right) < 10) {
-        setIsDragging(true);
-        startX = e.clientX;
-        startWidth = rect.width;
-        document.body.style.cursor = 'ew-resize';
-        document.body.style.userSelect = 'none';
-      }
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      
-      const diff = e.clientX - startX;
-      const newWidth = Math.max(180, Math.min(400, startWidth + diff));
-      
-      // Calculate collapsed state based on width
-      if (newWidth < 200 && !internalCollapsed) {
-        setInternalCollapsed(true);
-      } else if (newWidth > 200 && internalCollapsed) {
-        setInternalCollapsed(false);
-      }
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-
-    document.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-
-    return () => {
-      document.removeEventListener('mousedown', handleMouseDown);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, internalCollapsed]);
+  // Use internal state if props not provided
+  const collapsed = isCollapsed !== undefined ? isCollapsed : internalCollapsed;
+  const handleToggle = onToggle || (() => setInternalCollapsed(!internalCollapsed));
 
   const isActive = (href: string) => {
     if (href === "/admin") return pathname === "/admin";
@@ -140,38 +88,30 @@ export default function AdminSidebar({ isCollapsed: externalCollapsed, onToggle:
 
   return (
     <aside
-      id="admin-sidebar"
-      className={`fixed left-0 top-0 h-screen bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 text-white transition-all duration-200 z-40 flex flex-col ${
-        isCollapsed ? "w-20" : "w-64"
-      } ${isDragging ? 'cursor-ew-resize' : ''}`}
-      style={{ 
-        boxShadow: '4px 0 20px rgba(0, 0, 0, 0.15)',
-      }}
+      className={`fixed left-0 top-0 h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white transition-all duration-300 z-40 flex flex-col ${
+        collapsed ? "w-20" : "w-64"
+      }`}
     >
       {/* Logo Section */}
-      <div className="p-4 border-b border-slate-700/50 relative">
+      <div className="p-4 border-b border-slate-700/50">
         <Link href="/admin" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-orange-500/20">
+          <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg flex items-center justify-center flex-shrink-0">
             <Map className="w-5 h-5 text-white" />
           </div>
           {!isCollapsed && (
-            <div className="flex flex-col">
-              <span className="font-bold text-lg whitespace-nowrap bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
-                Karnel Admin
-              </span>
-              <span className="text-xs text-slate-500">Hệ thống quản lý</span>
-            </div>
+            <span className="font-bold text-lg whitespace-nowrap">
+              Karnel Admin
+            </span>
           )}
         </Link>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3 overflow-x-hidden">
+      <nav className="flex-1 overflow-y-auto py-4 px-3">
         {menuGroups.map((group, groupIndex) => (
-          <div key={groupIndex} className="mb-5">
+          <div key={groupIndex} className="mb-6">
             {!isCollapsed && (
-              <h3 className="px-3 mb-2 text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                <span className="w-1 h-1 bg-slate-600 rounded-full"></span>
+              <h3 className="px-3 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 {group.title}
               </h3>
             )}
@@ -180,22 +120,18 @@ export default function AdminSidebar({ isCollapsed: externalCollapsed, onToggle:
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative overflow-hidden ${
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
                       isActive(item.href)
-                        ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25"
-                        : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
+                        ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
+                        : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
                     }`}
                     title={isCollapsed ? item.label : undefined}
                   >
-                    {/* Active indicator */}
-                    {isActive(item.href) && (
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full" />
-                    )}
-                    <item.icon className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${
-                      isActive(item.href) ? "text-white" : "text-slate-500 group-hover:text-white group-hover:scale-110"
+                    <item.icon className={`w-5 h-5 flex-shrink-0 ${
+                      isActive(item.href) ? "text-white" : "text-slate-400 group-hover:text-white"
                     }`} />
                     {!isCollapsed && (
-                      <span className="font-medium whitespace-nowrap truncate">{item.label}</span>
+                      <span className="font-medium whitespace-nowrap">{item.label}</span>
                     )}
                   </Link>
                 </li>
@@ -208,7 +144,7 @@ export default function AdminSidebar({ isCollapsed: externalCollapsed, onToggle:
       {/* Logout Button */}
       <div className="p-3 border-t border-slate-700/50">
         <button
-          className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200 ${
+          className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-400 transition-colors ${
             isCollapsed ? "justify-center" : ""
           }`}
           title={isCollapsed ? "Đăng xuất" : undefined}
@@ -218,24 +154,17 @@ export default function AdminSidebar({ isCollapsed: externalCollapsed, onToggle:
         </button>
       </div>
 
-      {/* Collapse Toggle Button */}
+      {/* Collapse Toggle */}
       <button
         onClick={handleToggle}
-        className="absolute -right-3 top-20 w-7 h-7 bg-gradient-to-br from-orange-500 to-amber-500 border-2 border-white/20 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform shadow-lg shadow-orange-500/30"
-        title={isCollapsed ? "Mở rộng" : "Thu gọn"}
+        className="absolute -right-3 top-20 w-6 h-6 bg-slate-700 border-2 border-slate-600 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-600 transition-colors"
       >
-        {isCollapsed ? (
+        {collapsed ? (
           <ChevronRight className="w-4 h-4" />
         ) : (
           <ChevronLeft className="w-4 h-4" />
         )}
       </button>
-
-      {/* Drag Handle Indicator */}
-      <div 
-        className="absolute top-0 right-0 w-1 h-full cursor-ew-resize hover:bg-orange-500/50 transition-colors"
-        title="Kéo để thay đổi độ rộng"
-      />
     </aside>
   );
 }

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import Link from 'next/link';
 import { 
   MessageCircle, 
   Search, 
+  Edit2, 
   Trash2, 
   Eye, 
   Check,
@@ -14,63 +16,32 @@ import {
   Phone,
   Calendar,
   Star,
+  Filter,
   Download,
   CheckCircle,
-  AlertCircle,
-  Send,
-  Loader2,
-  Reply,
-  FileSpreadsheet
+  AlertCircle
 } from 'lucide-react';
 import type { Contact } from '@/types/admin';
-import { ContactDetailModal } from './ContactDetailModal';
-import { DeleteConfirmModal } from '../promotions/DeleteConfirmModal';
 
 interface ContactsManagementContentProps {
   contacts: Contact[];
   isLoading: boolean;
 }
 
-const statusLabels: Record<string, string> = {
-  unread: 'Chưa đọc',
-  read: 'Đã đọc',
-  replied: 'Đã phản hồi'
-};
-
-const statusColors: Record<string, string> = {
-  unread: 'bg-red-100 text-red-700',
-  read: 'bg-green-100 text-green-700',
-  replied: 'bg-blue-100 text-blue-700'
-};
-
 export function ContactsManagementContent({ contacts: initialContacts, isLoading }: ContactsManagementContentProps) {
-  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contacts, setContacts] = useState(initialContacts);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [deletingContact, setDeletingContact] = useState<Contact | null>(null);
-  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    setContacts(initialContacts || []);
-  }, [initialContacts]);
-
-  const showToast = (type: 'success' | 'error', message: string) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 3000);
-  };
-
   const filteredContacts = contacts.filter(contact => {
-    const matchesSearch = 
-      contact.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contact.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contact.title?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || contact.status === statusFilter;
+    const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.subject.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || 
+      (statusFilter === 'read' && contact.isRead) || 
+      (statusFilter === 'unread' && !contact.isRead);
     return matchesSearch && matchesStatus;
   });
 
@@ -80,94 +51,11 @@ export function ContactsManagementContent({ contacts: initialContacts, isLoading
     currentPage * itemsPerPage
   );
 
-  const handleViewDetail = async (contact: Contact) => {
-    setSelectedContact(contact);
-    setIsDetailModalOpen(true);
-    
-    // Auto-mark as read (F213)
-    if (contact.status === 'unread') {
-      try {
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-        await fetch(`${baseUrl}/api/admin/contacts/${contact.id}/status`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'read' }),
-        });
-        setContacts(prev => prev.map(c => c.id === contact.id ? { ...c, status: 'read' } : c));
-      } catch (error) {
-        console.error('Error marking as read:', error);
-      }
-    }
+  const handleToggleRead = (id: string) => {
+    setContacts(prev => prev.map(c => 
+      c.id === id ? { ...c, isRead: !c.isRead } : c
+    ));
   };
-
-  const handleDelete = async () => {
-    if (!deletingContact) return;
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      const response = await fetch(`${baseUrl}/api/admin/contacts/${deletingContact.id}`, {
-        method: 'DELETE',
-      });
-      const result = await response.json();
-      if (result.success) {
-        setContacts(prev => prev.filter(c => c.id !== deletingContact.id));
-        showToast('success', 'Xóa tin nhắn thành công!');
-      } else {
-        showToast('error', result.message || 'Xóa thất bại');
-      }
-    } catch (error) {
-      console.error('Error deleting contact:', error);
-      showToast('error', 'Đã xảy ra lỗi.');
-    } finally {
-      setIsDeleteModalOpen(false);
-      setDeletingContact(null);
-    }
-  };
-
-  const handleReplySuccess = (contactId: string) => {
-    setContacts(prev => prev.map(c => c.id === contactId ? { ...c, status: 'replied' } : c));
-    showToast('success', 'Gửi phản hồi thành công!');
-    setIsDetailModalOpen(false);
-  };
-
-  // Export to CSV (F218)
-  const handleExportCSV = () => {
-    const headers = ['STT', 'Họ tên', 'Email', 'SĐT', 'Tiêu đề', 'Nội dung', 'Ngày gửi', 'Trạng thái'];
-    const rows = filteredContacts.map((c, index) => [
-      index + 1,
-      c.fullName,
-      c.email,
-      c.phone || '',
-      c.title || '',
-      c.message.replace(/"/g, '""'),
-      new Date(c.createdAt).toLocaleString('vi-VN'),
-      statusLabels[c.status] || c.status
-    ]);
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `danh-sach-lien-he-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-    showToast('success', 'Xuất file Excel thành công!');
-  };
-
-  const openDeleteModal = (contact: Contact) => {
-    setDeletingContact(contact);
-    setIsDeleteModalOpen(true);
-  };
-
-  // Calculate stats
-  const unreadCount = contacts.filter(c => c.status === 'unread').length;
-  const readCount = contacts.filter(c => c.status === 'read').length;
-  const repliedCount = contacts.filter(c => c.status === 'replied').length;
 
   if (isLoading) {
     return (
@@ -189,28 +77,15 @@ export function ContactsManagementContent({ contacts: initialContacts, isLoading
 
   return (
     <div className="space-y-6">
-      {/* Toast */}
-      {toast && (
-        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg ${
-          toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-        }`}>
-          {toast.type === 'success' ? <Check className="w-5 h-5" /> : <X className="w-5 h-5" />}
-          {toast.message}
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Quản lý liên hệ</h1>
           <p className="text-gray-500 mt-1">Quản lý tin nhắn liên hệ từ khách hàng</p>
         </div>
-        <button 
-          onClick={handleExportCSV}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-        >
-          <FileSpreadsheet className="w-5 h-5" />
-          Xuất Excel
+        <button className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+          <Download className="w-5 h-5" />
+          Xuất danh sách
         </button>
       </div>
 
@@ -234,7 +109,9 @@ export function ContactsManagementContent({ contacts: initialContacts, isLoading
             </div>
             <div>
               <p className="text-sm text-gray-500">Chưa đọc</p>
-              <p className="text-2xl font-bold text-gray-900">{unreadCount}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {contacts.filter(c => !c.isRead).length}
+              </p>
             </div>
           </div>
         </div>
@@ -245,18 +122,22 @@ export function ContactsManagementContent({ contacts: initialContacts, isLoading
             </div>
             <div>
               <p className="text-sm text-gray-500">Đã đọc</p>
-              <p className="text-2xl font-bold text-gray-900">{readCount}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {contacts.filter(c => c.isRead).length}
+              </p>
             </div>
           </div>
         </div>
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-purple-100 rounded-lg">
-              <Reply className="w-6 h-6 text-purple-600" />
+              <Star className="w-6 h-6 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Đã phản hồi</p>
-              <p className="text-2xl font-bold text-gray-900">{repliedCount}</p>
+              <p className="text-sm text-gray-500">Đánh giá</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {contacts.filter(c => c.rating).length}
+              </p>
             </div>
           </div>
         </div>
@@ -269,7 +150,7 @@ export function ContactsManagementContent({ contacts: initialContacts, isLoading
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm theo tên, email..."
+              placeholder="Tìm kiếm liên hệ..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -283,7 +164,6 @@ export function ContactsManagementContent({ contacts: initialContacts, isLoading
             <option value="all">Tất cả trạng thái</option>
             <option value="unread">Chưa đọc</option>
             <option value="read">Đã đọc</option>
-            <option value="replied">Đã phản hồi</option>
           </select>
         </div>
       </div>
@@ -298,25 +178,17 @@ export function ContactsManagementContent({ contacts: initialContacts, isLoading
                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Tiêu đề</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Nội dung</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Ngày gửi</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Đánh giá</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Trạng thái</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {paginatedContacts.map((contact) => (
-                <tr 
-                  key={contact.id} 
-                  className={`hover:bg-gray-50 transition-colors cursor-pointer ${contact.status === 'unread' ? 'bg-blue-50/50' : ''}`}
-                  onClick={() => handleViewDetail(contact)}
-                >
+                <tr key={contact.id} className={`hover:bg-gray-50 transition-colors ${!contact.isRead ? 'bg-blue-50/50' : ''}`}>
                   <td className="px-6 py-4">
                     <div>
-                      <p className="font-medium text-gray-900 flex items-center gap-2">
-                        {contact.fullName}
-                        {contact.status === 'unread' && (
-                          <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                        )}
-                      </p>
+                      <p className="font-medium text-gray-900">{contact.name}</p>
                       <div className="flex items-center gap-2 text-sm text-gray-500">
                         <Mail className="w-3.5 h-3.5" />
                         {contact.email}
@@ -330,41 +202,71 @@ export function ContactsManagementContent({ contacts: initialContacts, isLoading
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="font-medium text-gray-900">{contact.title || 'Không có tiêu đề'}</p>
-                    {contact.serviceType && (
+                    <p className="font-medium text-gray-900">{contact.subject}</p>
+                    {contact.service && (
                       <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
-                        {contact.serviceType}
+                        {contact.service}
                       </span>
                     )}
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-gray-600 line-clamp-2 max-w-[200px]">{contact.message}</p>
+                    <p className="text-gray-600 line-clamp-2 max-w-[250px]">{contact.message}</p>
                   </td>
-                  <td className="px-6 py-4 text-gray-600 text-sm">
+                  <td className="px-6 py-4 text-gray-600">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
                       {new Date(contact.createdAt).toLocaleDateString('vi-VN')}
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium ${statusColors[contact.status] || 'bg-gray-100 text-gray-700'}`}>
-                      {contact.status === 'unread' && <AlertCircle className="w-3.5 h-3.5" />}
-                      {contact.status === 'read' && <CheckCircle className="w-3.5 h-3.5" />}
-                      {contact.status === 'replied' && <Reply className="w-3.5 h-3.5" />}
-                      {statusLabels[contact.status] || contact.status}
-                    </span>
+                    {contact.rating ? (
+                      <div className="flex items-center gap-1">
+                        {[...Array(contact.rating)].map((_, i) => (
+                          <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
                   </td>
-                  <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleViewDetail(contact)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => handleToggleRead(contact.id)}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium ${
+                        contact.isRead 
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                          : 'bg-red-100 text-red-700 hover:bg-red-200'
+                      }`}
+                    >
+                      {contact.isRead ? (
+                        <>
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          Đã đọc
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          Chưa đọc
+                        </>
+                      )}
+                    </button>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/admin/contacts/${contact.id}`}
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                         title="Xem chi tiết"
                       >
                         <Eye className="w-4 h-4" />
+                      </Link>
+                      <button
+                        className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                        title="Trả lời"
+                      >
+                        <Mail className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => openDeleteModal(contact)}
                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Xóa"
                       >
@@ -382,29 +284,36 @@ export function ContactsManagementContent({ contacts: initialContacts, isLoading
         {filteredContacts.length > 0 && (
           <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
             <p className="text-sm text-gray-500">
-              Hiển thị {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredContacts.length)} của {filteredContacts.length}
+              Hiển thị {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredContacts.length)} của {filteredContacts.length} liên hệ
             </p>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              {[...Array(Math.min(5, totalPages))].map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`w-10 h-10 rounded-lg text-sm font-medium ${currentPage === i + 1 ? 'bg-orange-500 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-                >
-                  {i + 1}
-                </button>
-              ))}
+              {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                const page = i + 1;
+                return (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
+                      currentPage === page 
+                        ? 'bg-orange-500 text-white' 
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
               <button
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
-                className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -412,24 +321,6 @@ export function ContactsManagementContent({ contacts: initialContacts, isLoading
           </div>
         )}
       </div>
-
-      {/* Detail Modal */}
-      <ContactDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
-        contact={selectedContact}
-        onReplySuccess={handleReplySuccess}
-      />
-
-      {/* Delete Modal (F204) */}
-      <DeleteConfirmModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleDelete}
-        title="Xóa tin nhắn"
-        message="Bạn có chắc chắn muốn xóa tin nhắn này? Hành động này không thể hoàn tác."
-        itemName={deletingContact?.fullName}
-      />
     </div>
   );
 }
