@@ -129,15 +129,21 @@ export function TourFormModal({ isOpen, onClose, onSubmit, tour, mode }: TourFor
 
   const addItineraryDay = () => {
     if (newItineraryDay.title.trim() && newItineraryDay.description.trim()) {
-      const newItinerary = [...(formData.itinerary || []), { ...newItineraryDay }];
-      setFormData(prev => ({ ...prev, itinerary: newItinerary }));
+      const newItinerary = [...(formData.itinerary || []), { 
+        day: newItineraryDay.day,
+        title: newItineraryDay.title,
+        description: newItineraryDay.description,
+        activities: [],
+        meals: []
+      }];
+      setFormData(prev => ({ ...prev, itinerary: newItinerary as any }));
       setNewItineraryDay({ day: (formData.itinerary?.length || 0) + 2, title: '', description: '' });
     }
   };
 
   const removeItineraryDay = (index: number) => {
     const newItinerary = (formData.itinerary || []).filter((_, i) => i !== index);
-    setFormData(prev => ({ ...prev, itinerary: newItinerary }));
+    setFormData(prev => ({ ...prev, itinerary: newItinerary as any }));
   };
 
   const validate = () => {

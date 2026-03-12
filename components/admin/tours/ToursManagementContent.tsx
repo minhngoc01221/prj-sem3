@@ -16,7 +16,6 @@ import {
   ChevronRight,
   Clock,
   Users,
-  Calendar,
   DollarSign
 } from 'lucide-react';
 import type { TourPackage } from '@/types/admin';
@@ -28,7 +27,7 @@ interface ToursManagementContentProps {
 }
 
 export function ToursManagementContent({ tours: initialTours, isLoading }: ToursManagementContentProps) {
-  const [tours, setTours] = useState(initialTours);
+  const [tours, setTours] = useState<TourPackage[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTours, setSelectedTours] = useState<string[]>([]);
@@ -38,8 +37,12 @@ export function ToursManagementContent({ tours: initialTours, isLoading }: Tours
   const itemsPerPage = 10;
 
   useEffect(() => {
-    setTours(initialTours);
+    setTours(initialTours || []);
   }, [initialTours]);
+
+  const getTourId = (tour: TourPackage, index: number): string => {
+    return tour.id || `tour-${index}`;
+  };
 
   const handleAddTour = () => {
     setEditingTour(null);
@@ -101,8 +104,9 @@ export function ToursManagementContent({ tours: initialTours, isLoading }: Tours
   };
 
   const filteredTours = tours.filter(tour => {
+    if (!tour.name) return false;
     const matchesSearch = tour.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tour.destinations.join(' ').toLowerCase().includes(searchTerm.toLowerCase());
+      (tour.destinations && tour.destinations.join(' ').toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesSearch;
   });
 
@@ -116,7 +120,7 @@ export function ToursManagementContent({ tours: initialTours, isLoading }: Tours
     if (selectedTours.length === paginatedTours.length) {
       setSelectedTours([]);
     } else {
-      setSelectedTours(paginatedTours.map(t => t.id));
+      setSelectedTours(paginatedTours.map(t => getTourId(t, 0)));
     }
   };
 
@@ -158,17 +162,13 @@ export function ToursManagementContent({ tours: initialTours, isLoading }: Tours
           <h1 className="text-2xl font-bold text-gray-900">Quản lý tour</h1>
           <p className="text-gray-500 mt-1">Quản lý tất cả gói tour trong hệ thống</p>
         </div>
-        <Link 
-          href="/admin/tours/new"
-          onClick={(e) => {
-            e.preventDefault();
-            handleAddTour();
-          }}
+        <button 
+          onClick={handleAddTour}
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
         >
           <Plus className="w-5 h-5" />
           Thêm tour
-        </Link>
+        </button>
       </div>
 
       {/* Stats */}
@@ -205,7 +205,7 @@ export function ToursManagementContent({ tours: initialTours, isLoading }: Tours
             <div>
               <p className="text-sm text-gray-500">Tổng lượt đặt</p>
               <p className="text-2xl font-bold text-gray-900">
-                {tours.reduce((acc, t) => acc + t.bookingCount, 0)}
+                {tours.reduce((acc, t) => acc + (t.bookingCount || 0), 0)}
               </p>
             </div>
           </div>
@@ -219,7 +219,7 @@ export function ToursManagementContent({ tours: initialTours, isLoading }: Tours
               <p className="text-sm text-gray-500">Giá trung bình</p>
               <p className="text-2xl font-bold text-gray-900">
                 {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(
-                  tours.reduce((acc, t) => acc + t.price, 0) / (tours.length || 1)
+                  tours.reduce((acc, t) => acc + (t.price || 0), 0) / (tours.length || 1)
                 )}
               </p>
             </div>
@@ -268,106 +268,109 @@ export function ToursManagementContent({ tours: initialTours, isLoading }: Tours
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {paginatedTours.map((tour) => (
-                <tr key={tour.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <input
-                      type="checkbox"
-                      checked={selectedTours.includes(tour.id)}
-                      onChange={() => handleSelectTour(tour.id)}
-                      className="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
-                    />
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
-                      {tour.images && tour.images.length > 0 ? (
-                        <img 
-                          src={tour.images[0]} 
-                          alt={tour.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <ImageIcon className="w-6 h-6 text-gray-400" />
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="font-medium text-gray-900">{tour.name}</p>
-                      <p className="text-sm text-gray-500 line-clamp-1">{tour.duration}</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1 text-gray-600">
-                      <Clock className="w-4 h-4" />
-                      {tour.duration}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    <div className="max-w-[150px] truncate">
-                      {tour.destinations.join(', ')}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tour.price)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1 text-gray-600">
-                      <Users className="w-4 h-4" />
-                      {tour.bookingCount}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => handleToggleActive(tour.id)}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium ${
-                        tour.isActive 
-                          ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      {tour.isActive ? (
-                        <>
-                          <Check className="w-3.5 h-3.5" />
-                          Hoạt động
-                        </>
-                      ) : (
-                        <>
-                          <X className="w-3.5 h-3.5" />
-                          Tắt
-                        </>
-                      )}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/admin/tours/${tour.id}`}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="Xem chi tiết"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Link>
+              {paginatedTours.map((tour, index) => {
+                const tourId = getTourId(tour, index);
+                return (
+                  <tr key={tourId} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedTours.includes(tourId)}
+                        onChange={() => handleSelectTour(tourId)}
+                        className="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                      />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
+                        {tour.images && tour.images.length > 0 ? (
+                          <img 
+                            src={tour.images[0]} 
+                            alt={tour.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="w-6 h-6 text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="font-medium text-gray-900">{tour.name}</p>
+                        <p className="text-sm text-gray-500 line-clamp-1">{tour.duration}</p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1 text-gray-600">
+                        <Clock className="w-4 h-4" />
+                        {tour.duration}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-600">
+                      <div className="max-w-[150px] truncate">
+                        {tour.destinations?.join(', ') || '-'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-600">
+                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tour.price || 0)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1 text-gray-600">
+                        <Users className="w-4 h-4" />
+                        {tour.bookingCount || 0}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
                       <button
-                        onClick={() => handleEditTour(tour)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Chỉnh sửa"
+                        onClick={() => handleToggleActive(tourId)}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium ${
+                          tour.isActive 
+                            ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
                       >
-                        <Edit2 className="w-4 h-4" />
+                        {tour.isActive ? (
+                          <>
+                            <Check className="w-3.5 h-3.5" />
+                            Hoạt động
+                          </>
+                        ) : (
+                          <>
+                            <X className="w-3.5 h-3.5" />
+                            Tắt
+                          </>
+                        )}
                       </button>
-                      <button
-                        onClick={() => handleDeleteTour(tour.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Xóa"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/admin/tours/${tourId}`}
+                          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                          title="Xem chi tiết"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                        <button
+                          onClick={() => handleEditTour(tour)}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Chỉnh sửa"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTour(tourId)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Xóa"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
