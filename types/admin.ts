@@ -1,6 +1,7 @@
 export interface TouristSpot {
   id: string;
   name: string;
+  slug?: string;
   description: string;
   location: string;
   region: 'north' | 'central' | 'south';
@@ -8,8 +9,10 @@ export interface TouristSpot {
   images: string[];
   rating: number;
   reviewCount: number;
-  bestTime: string;
+  bestTime?: string;
   ticketPrice?: string;
+  highlights?: string[];
+  tips?: string[];
   isActive: boolean;
   tourCount: number;
   createdAt: string;

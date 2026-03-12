@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
   MapPin, 
   Plus, 
   Search, 
-  Filter, 
   Edit2, 
   Trash2, 
   Eye, 
@@ -14,32 +13,31 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  MoreVertical,
-  Layers
+  Layers,
+  Loader2,
+  Star,
+  Upload
 } from 'lucide-react';
 import type { TouristSpot } from '@/types/admin';
-import { SpotFormModal } from './SpotFormModal';
-import { DeleteConfirmModal } from './DeleteConfirmModal';
-import { mockSpots } from './mockData';
 
 interface SpotsManagementContentProps {
   spots?: TouristSpot[];
   isLoading?: boolean;
 }
 
-const regionLabels = {
+const regionLabels: Record<string, string> = {
   north: 'Miền Bắc',
   central: 'Miền Trung',
   south: 'Miền Nam'
 };
 
-const regionColors = {
+const regionColors: Record<string, string> = {
   north: 'bg-blue-100 text-blue-700',
   central: 'bg-orange-100 text-orange-700',
   south: 'bg-green-100 text-green-700'
 };
 
-const typeLabels = {
+const typeLabels: Record<string, string> = {
   beach: 'Bãi biển',
   mountain: 'Núi',
   historical: 'Di tích',
@@ -47,27 +45,82 @@ const typeLabels = {
   other: 'Khác'
 };
 
+const typeOptions = [
+  { value: 'beach', label: 'Bãi biển' },
+  { value: 'mountain', label: 'Núi' },
+  { value: 'historical', label: 'Di tích' },
+  { value: 'waterfall', label: 'Thác nước' },
+  { value: 'other', label: 'Khác' },
+];
+
+const regionOptions = [
+  { value: 'north', label: 'Miền Bắc' },
+  { value: 'central', label: 'Miền Trung' },
+  { value: 'south', label: 'Miền Nam' },
+];
+
 export function SpotsManagementContent({ spots: initialSpots, isLoading: initialLoading = false }: SpotsManagementContentProps) {
-  const [spots, setSpots] = useState<TouristSpot[]>(initialSpots?.length ? initialSpots : mockSpots);
-  const [isLoading, setIsLoading] = useState(initialLoading);
+  const [spots, setSpots] = useState<TouristSpot[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [regionFilter, setRegionFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedSpots, setSelectedSpots] = useState<string[]>([]);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   
   // Modal states
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedSpot, setSelectedSpot] = useState<TouristSpot | null>(null);
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
+  const [formData, setFormData] = useState<Partial<TouristSpot>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const itemsPerPage = 10;
 
+  // Fetch spots from API
+  const fetchSpots = async () => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/api/admin/spots?isActive=all`, {
+        cache: 'no-store',
+      });
+      const result = await response.json();
+      if (result.success) {
+        setSpots(result.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching spots:', error);
+      showToast('error', 'Lỗi khi tải dữ liệu');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSpots();
+  }, []);
+
+  useEffect(() => {
+    if (initialSpots && initialSpots.length > 0) {
+      setSpots(initialSpots);
+      setIsLoading(initialLoading);
+    }
+  }, [initialSpots, initialLoading]);
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const filteredSpots = useMemo(() => {
     return spots.filter(spot => {
-      const matchesSearch = spot.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        spot.location.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = 
+        spot.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        spot.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        spot.description?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesRegion = regionFilter === 'all' || spot.region === regionFilter;
       const matchesType = typeFilter === 'all' || spot.type === typeFilter;
       return matchesSearch && matchesRegion && matchesType;
@@ -94,20 +147,70 @@ export function SpotsManagementContent({ spots: initialSpots, isLoading: initial
     );
   };
 
-  const handleToggleActive = (id: string) => {
-    setSpots(prev => prev.map(spot => 
-      spot.id === id ? { ...spot, isActive: !spot.isActive } : spot
-    ));
+  const handleToggleActive = async (id: string) => {
+    const spot = spots.find(s => s.id === id);
+    if (!spot) return;
+
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/api/admin/spots/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !spot.isActive }),
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        setSpots(prev => prev.map(s => 
+          s.id === id ? { ...s, isActive: !s.isActive } : s
+        ));
+        showToast('success', spot.isActive ? 'Đã vô hiệu hóa' : 'Đã kích hoạt');
+      } else {
+        showToast('error', result.message || 'Cập nhật thất bại');
+      }
+    } catch (error) {
+      console.error('Error toggling active:', error);
+      showToast('error', 'Lỗi khi cập nhật');
+    }
   };
 
+  // Form handlers
   const handleAddNew = () => {
     setSelectedSpot(null);
+    setFormData({
+      name: '',
+      slug: '',
+      description: '',
+      location: '',
+      region: 'north',
+      type: 'other',
+      images: [],
+      bestTime: '',
+      ticketPrice: '',
+      highlights: [],
+      tips: [],
+      isActive: true,
+    });
     setFormMode('add');
     setIsFormModalOpen(true);
   };
 
   const handleEdit = (spot: TouristSpot) => {
     setSelectedSpot(spot);
+    setFormData({
+      name: spot.name,
+      slug: spot.slug || '',
+      description: spot.description,
+      location: spot.location,
+      region: spot.region,
+      type: spot.type,
+      images: spot.images || [],
+      bestTime: spot.bestTime || '',
+      ticketPrice: spot.ticketPrice || '',
+      highlights: spot.highlights || [],
+      tips: spot.tips || [],
+      isActive: spot.isActive,
+    });
     setFormMode('edit');
     setIsFormModalOpen(true);
   };
@@ -117,33 +220,126 @@ export function SpotsManagementContent({ spots: initialSpots, isLoading: initial
     setIsDeleteModalOpen(true);
   };
 
-  const handleFormSubmit = async (data: Partial<TouristSpot>) => {
-    if (formMode === 'add') {
-      const newSpot: TouristSpot = {
-        ...data as TouristSpot,
-        id: String(Date.now()),
-        rating: 0,
-        reviewCount: 0,
-        tourCount: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setSpots(prev => [newSpot, ...prev]);
-    } else if (selectedSpot) {
-      setSpots(prev => prev.map(spot => 
-        spot.id === selectedSpot.id 
-          ? { ...spot, ...data, updatedAt: new Date().toISOString() } 
-          : spot
-      ));
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', file);
+      formDataUpload.append('type', 'spots');
+
+      const response = await fetch(`${baseUrl}/api/admin/settings/upload`, {
+        method: 'POST',
+        body: formDataUpload,
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        setFormData(prev => ({
+          ...prev,
+          images: [...(prev.images || []), result.data.url]
+        }));
+        showToast('success', 'Tải ảnh thành công!');
+      } else {
+        showToast('error', result.message || 'Tải ảnh thất bại');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      showToast('error', 'Lỗi khi tải ảnh');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      images: (prev.images || []).filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleFormSubmit = async () => {
+    if (!formData.name || !formData.description || !formData.location) {
+      showToast('error', 'Vui lòng nhập đầy đủ thông tin bắt buộc');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      
+      if (formMode === 'add') {
+        const response = await fetch(`${baseUrl}/api/admin/spots`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+        const result = await response.json();
+
+        if (result.success) {
+          showToast('success', 'Thêm điểm du lịch thành công!');
+          fetchSpots();
+          setIsFormModalOpen(false);
+        } else {
+          showToast('error', result.message || 'Thêm thất bại');
+        }
+      } else if (selectedSpot) {
+        const response = await fetch(`${baseUrl}/api/admin/spots/${selectedSpot.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+        const result = await response.json();
+
+        if (result.success) {
+          showToast('success', 'Cập nhật thành công!');
+          fetchSpots();
+          setIsFormModalOpen(false);
+        } else {
+          showToast('error', result.message || 'Cập nhật thất bại');
+        }
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      showToast('error', 'Lỗi khi lưu');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleConfirmDelete = async () => {
-    if (selectedSpot) {
-      setSpots(prev => prev.filter(spot => spot.id !== selectedSpot.id));
-      setSelectedSpots(prev => prev.filter(id => id !== selectedSpot.id));
+    if (!selectedSpot) return;
+
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/api/admin/spots/${selectedSpot.id}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        setSpots(prev => prev.filter(spot => spot.id !== selectedSpot.id));
+        showToast('success', 'Xóa thành công!');
+      } else {
+        showToast('error', result.message || 'Xóa thất bại');
+      }
+    } catch (error) {
+      console.error('Error deleting spot:', error);
+      showToast('error', 'Lỗi khi xóa');
+    } finally {
+      setIsDeleteModalOpen(false);
+      setSelectedSpot(null);
     }
   };
+
+  // Stats
+  const totalSpots = spots.length;
+  const activeSpots = spots.filter(s => s.isActive).length;
+  const northCount = spots.filter(s => s.region === 'north').length;
+  const centralCount = spots.filter(s => s.region === 'central').length;
 
   if (isLoading) {
     return (
@@ -165,6 +361,16 @@ export function SpotsManagementContent({ spots: initialSpots, isLoading: initial
 
   return (
     <div className="space-y-6">
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg ${
+          toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        }`}>
+          {toast.type === 'success' ? <Check className="w-5 h-5" /> : <X className="w-5 h-5" />}
+          {toast.message}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -189,7 +395,7 @@ export function SpotsManagementContent({ spots: initialSpots, isLoading: initial
             </div>
             <div>
               <p className="text-sm text-gray-500">Tổng điểm du lịch</p>
-              <p className="text-2xl font-bold text-gray-900">{spots.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{totalSpots}</p>
             </div>
           </div>
         </div>
@@ -200,35 +406,29 @@ export function SpotsManagementContent({ spots: initialSpots, isLoading: initial
             </div>
             <div>
               <p className="text-sm text-gray-500">Đang hoạt động</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {spots.filter(s => s.isActive).length}
-              </p>
+              <p className="text-2xl font-bold text-gray-900">{activeSpots}</p>
             </div>
           </div>
         </div>
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-purple-100 rounded-lg">
-              <ImageIcon className="w-6 h-6 text-purple-600" />
+              <MapPin className="w-6 h-6 text-purple-600" />
             </div>
             <div>
               <p className="text-sm text-gray-500">Miền Bắc</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {spots.filter(s => s.region === 'north').length}
-              </p>
+              <p className="text-2xl font-bold text-gray-900">{northCount}</p>
             </div>
           </div>
         </div>
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-orange-100 rounded-lg">
-              <ImageIcon className="w-6 h-6 text-orange-600" />
+              <MapPin className="w-6 h-6 text-orange-600" />
             </div>
             <div>
               <p className="text-sm text-gray-500">Miền Trung</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {spots.filter(s => s.region === 'central').length}
-              </p>
+              <p className="text-2xl font-bold text-gray-900">{centralCount}</p>
             </div>
           </div>
         </div>
@@ -260,9 +460,9 @@ export function SpotsManagementContent({ spots: initialSpots, isLoading: initial
               className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white min-w-[160px]"
             >
               <option value="all">Tất cả vùng miền</option>
-              <option value="north">Miền Bắc</option>
-              <option value="central">Miền Trung</option>
-              <option value="south">Miền Nam</option>
+              {regionOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
             <select
               value={typeFilter}
@@ -273,11 +473,9 @@ export function SpotsManagementContent({ spots: initialSpots, isLoading: initial
               className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white min-w-[160px]"
             >
               <option value="all">Tất cả loại hình</option>
-              <option value="beach">Bãi biển</option>
-              <option value="mountain">Núi</option>
-              <option value="historical">Di tích</option>
-              <option value="waterfall">Thác nước</option>
-              <option value="other">Khác</option>
+              {typeOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -302,7 +500,7 @@ export function SpotsManagementContent({ spots: initialSpots, isLoading: initial
                 <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 hidden md:table-cell">Vị trí</th>
                 <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900">Vùng miền</th>
                 <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 hidden lg:table-cell">Loại hình</th>
-                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 hidden lg:table-cell">Số tour</th>
+                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 hidden lg:table-cell">Đánh giá</th>
                 <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900">Trạng thái</th>
                 <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900">Thao tác</th>
               </tr>
@@ -347,9 +545,10 @@ export function SpotsManagementContent({ spots: initialSpots, isLoading: initial
                   </td>
                   <td className="px-4 py-4 text-gray-600 hidden lg:table-cell">{typeLabels[spot.type]}</td>
                   <td className="px-4 py-4 hidden lg:table-cell">
-                    <div className="flex items-center gap-1.5 text-gray-600">
-                      <Layers className="w-4 h-4" />
-                      <span className="font-medium">{spot.tourCount}</span>
+                    <div className="flex items-center gap-1">
+                      <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                      <span className="font-medium">{spot.rating || 0}</span>
+                      <span className="text-gray-400 text-sm">({spot.reviewCount || 0})</span>
                     </div>
                   </td>
                   <td className="px-4 py-4">
@@ -451,21 +650,194 @@ export function SpotsManagementContent({ spots: initialSpots, isLoading: initial
         )}
       </div>
 
-      {/* Modals */}
-      <SpotFormModal
-        isOpen={isFormModalOpen}
-        onClose={() => setIsFormModalOpen(false)}
-        onSubmit={handleFormSubmit}
-        spot={selectedSpot}
-        mode={formMode}
-      />
+      {/* Form Modal */}
+      {isFormModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setIsFormModalOpen(false)}></div>
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {formMode === 'add' ? 'Thêm điểm du lịch mới' : 'Chỉnh sửa điểm du lịch'}
+              </h2>
+              <button onClick={() => setIsFormModalOpen(false)} className="p-2 text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-      <DeleteConfirmModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        spot={selectedSpot}
-      />
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {/* Images */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Hình ảnh</label>
+                <div className="flex flex-wrap gap-2">
+                  {formData.images?.map((img, index) => (
+                    <div key={index} className="relative w-20 h-20 rounded-lg overflow-hidden">
+                      <img src={img} alt="" className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <label className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:border-orange-500 hover:bg-orange-50">
+                    {isUploading ? (
+                      <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+                    ) : (
+                      <Upload className="w-5 h-5 text-gray-400" />
+                    )}
+                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={isUploading} />
+                  </label>
+                </div>
+              </div>
+
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên điểm du lịch *</label>
+                  <input
+                    type="text"
+                    value={formData.name || ''}
+                    onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    placeholder="VD: Vịnh Hạ Long"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
+                  <input
+                    type="text"
+                    value={formData.slug || ''}
+                    onChange={e => setFormData(prev => ({ ...prev, slug: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    placeholder="vịnh-ha-long"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả *</label>
+                  <textarea
+                    rows={3}
+                    value={formData.description || ''}
+                    onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    placeholder="Mô tả về điểm du lịch..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Vị trí *</label>
+                  <input
+                    type="text"
+                    value={formData.location || ''}
+                    onChange={e => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    placeholder="Quảng Ninh"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Vùng miền</label>
+                  <select
+                    value={formData.region || 'north'}
+                    onChange={e => setFormData(prev => ({ ...prev, region: e.target.value as any }))}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
+                  >
+                    {regionOptions.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Loại hình</label>
+                  <select
+                    value={formData.type || 'other'}
+                    onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as any }))}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
+                  >
+                    {typeOptions.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Thời điểm tốt nhất</label>
+                  <input
+                    type="text"
+                    value={formData.bestTime || ''}
+                    onChange={e => setFormData(prev => ({ ...prev, bestTime: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    placeholder="Tháng 4 - Tháng 10"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Giá vé</label>
+                  <input
+                    type="text"
+                    value={formData.ticketPrice || ''}
+                    onChange={e => setFormData(prev => ({ ...prev, ticketPrice: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    placeholder="200.000 VNĐ"
+                  />
+                </div>
+              </div>
+
+              {/* Active toggle */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  checked={formData.isActive !== false}
+                  onChange={e => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                  className="w-4 h-4 text-orange-500 rounded focus:ring-orange-500"
+                />
+                <label htmlFor="isActive" className="text-sm text-gray-700">Kích hoạt hiển thị</label>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
+              <button
+                onClick={() => setIsFormModalOpen(false)}
+                className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleFormSubmit}
+                disabled={isSubmitting}
+                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 flex items-center gap-2"
+              >
+                {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                {formMode === 'add' ? 'Thêm mới' : 'Lưu thay đổi'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Modal */}
+      {isDeleteModalOpen && selectedSpot && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setIsDeleteModalOpen(false)}></div>
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Xác nhận xóa</h3>
+            <p className="text-gray-600 mb-6">
+              Bạn có chắc chắn muốn xóa điểm du lịch <strong>"{selectedSpot.name}"</strong>? Hành động này không thể hoàn tác.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+              >
+                Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
