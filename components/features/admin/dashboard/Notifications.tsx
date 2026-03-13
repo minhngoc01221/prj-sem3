@@ -36,12 +36,10 @@ const notificationColors: Record<NotificationType, string> = {
 export function Notifications({
   initialNotifications = [],
   initialUnreadCount = 0,
-  pollingInterval = 30000,
 }: NotificationsProps) {
   const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
   const [unreadCount, setUnreadCount] = useState(initialUnreadCount);
   const [isLoading, setIsLoading] = useState(false);
-  const [isPolling, setIsPolling] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const fetchNotifications = useCallback(async () => {
@@ -63,18 +61,6 @@ export function Notifications({
       setIsLoading(false);
     }
   }, [isLoading]);
-
-  useEffect(() => {
-    if (!isPolling) return;
-
-    fetchNotifications();
-    
-    const interval = setInterval(() => {
-      fetchNotifications();
-    }, pollingInterval);
-
-    return () => clearInterval(interval);
-  }, [fetchNotifications, isPolling, pollingInterval]);
 
   const handleMarkAllAsRead = async () => {
     try {
@@ -134,14 +120,6 @@ export function Notifications({
               Cập nhật: {format(lastUpdated, 'HH:mm:ss')}
             </span>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={togglePolling}
-            className="text-xs"
-          >
-            {isPolling ? 'Tắt realtime' : 'Bật realtime'}
-          </Button>
           {unreadCount > 0 && (
             <Button
               variant="outline"
