@@ -4,7 +4,7 @@ import client, { getDb } from '@/lib/mongodb';
 export async function GET(request: Request) {
   try {
     await client.connect();
-    const db = getDb();
+    const db = await getDb();
 
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type'); // 'tour' | 'hotel'

@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     await client.connect();
-    const db = getDb();
+    const db = await getDb();
     const toursCollection = db.collection('tour_packages');
 
     const { id } = await params;
@@ -64,7 +64,7 @@ export async function PUT(
 ) {
   try {
     await client.connect();
-    const db = getDb();
+    const db = await getDb();
     const toursCollection = db.collection('tour_packages');
 
     const { id } = await params;
@@ -148,7 +148,7 @@ export async function DELETE(
 ) {
   try {
     await client.connect();
-    const db = getDb();
+    const db = await getDb();
     const toursCollection = db.collection('tour_packages');
 
     const { id } = await params;

@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     }
 
     await client.connect();
-    const db = getDb();
+    const db = await getDb();
 
     const suggestions: AutocompleteSuggestion[] = [];
 

@@ -5,7 +5,7 @@ import type { DashboardStats, ApiResponse } from '@/types/dashboard';
 export async function GET(): Promise<NextResponse<ApiResponse<DashboardStats>>> {
   try {
     await client.connect();
-    const db = getDb();
+    const db = await getDb();
     
     const [
       touristSpotsCount,
