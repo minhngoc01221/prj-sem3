@@ -9,7 +9,7 @@ export async function GET(
 ) {
   try {
     await client.connect();
-    const db = getDb();
+    const db = await getDb();
     const { id: hotelId } = await params;
 
     const roomsCollection = db.collection('rooms');
@@ -34,7 +34,7 @@ export async function POST(
 ) {
   try {
     await client.connect();
-    const db = getDb();
+    const db = await getDb();
     const { id: hotelId } = await params;
 
     const roomsCollection = db.collection('rooms');

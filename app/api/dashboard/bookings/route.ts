@@ -7,7 +7,7 @@ export async function GET(
 ): Promise<NextResponse<ApiResponse<RecentBookingsResponse>>> {
   try {
     await client.connect();
-    const db = getDb();
+    const db = await getDb();
     
     const contactsCollection = db.collection('contacts');
     

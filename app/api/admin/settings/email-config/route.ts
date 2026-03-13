@@ -4,7 +4,7 @@ import client, { getDb } from '@/lib/mongodb';
 export async function GET() {
   try {
     await client.connect();
-    const db = getDb();
+    const db = await getDb();
     const settingsCollection = db.collection('settings');
 
     const emailConfig = await settingsCollection.findOne({ key: 'email_config' });
@@ -40,7 +40,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     await client.connect();
-    const db = getDb();
+    const db = await getDb();
     const settingsCollection = db.collection('settings');
 
     const body = await request.json();
