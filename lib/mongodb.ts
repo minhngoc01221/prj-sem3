@@ -16,7 +16,7 @@ const globalForMongo = globalThis as unknown as GlobalMongo;
 
 async function connectToDatabase(): Promise<MongoClient> {
   // Return existing connected client
-  if (globalForMongo.mongoClient) {
+  if (globalForMongo.mongoClient?.topology?.isConnected()) {
     return globalForMongo.mongoClient;
   }
 
