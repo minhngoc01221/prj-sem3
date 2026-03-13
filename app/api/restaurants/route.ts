@@ -6,7 +6,7 @@ import { ObjectId } from 'mongodb';
 export async function GET(request: Request) {
   try {
     await client.connect();
-    const db = getDb();
+    const db = await getDb();
     
     const { searchParams } = new URL(request.url);
     const city = searchParams.get('city');
@@ -54,7 +54,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     await client.connect();
-    const db = getDb();
+    const db = await getDb();
     const body = await request.json();
     
     const restaurantsCollection = db.collection('restaurants');

@@ -1,10 +1,21 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import client, { getDb } from '@/lib/mongodb';
+import { verifyAdminAuth } from '@/lib/adminAuth';
 
-export async function GET() {
+// GET settings - requires auth
+export async function GET(request: NextRequest) {
+  const authResult = await verifyAdminAuth(request);
+  
+  if (!authResult.success) {
+    return NextResponse.json(
+      { success: false, message: authResult.error },
+      { status: 401 }
+    );
+  }
+
   try {
     await client.connect();
-    const db = getDb();
+    const db = await getDb();
     const settingsCollection = db.collection('settings');
 
     const settings = await settingsCollection.find({}).toArray();
@@ -37,7 +48,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     await client.connect();
-    const db = getDb();
+    const db = await getDb();
     const settingsCollection = db.collection('settings');
 
     const body = await request.json();

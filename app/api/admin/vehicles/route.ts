@@ -1,10 +1,21 @@
 import { NextResponse } from 'next/server';
 import client, { getDb } from '@/lib/mongodb';
+import { verifyAdminAuth } from '@/lib/adminAuth';
 
+// GET vehicles - requires auth
 export async function GET(request: Request) {
+  const authResult = await verifyAdminAuth(request);
+  
+  if (!authResult.success) {
+    return NextResponse.json(
+      { success: false, message: authResult.error },
+      { status: 401 }
+    );
+  }
+
   try {
     await client.connect();
-    const db = getDb();
+    const db = await getDb();
     const vehiclesCollection = db.collection('transports');
 
     const { searchParams } = new URL(request.url);
@@ -69,9 +80,19 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  // Require auth for creating vehicles
+  const authResult = await verifyAdminAuth(request);
+  
+  if (!authResult.success) {
+    return NextResponse.json(
+      { success: false, message: authResult.error },
+      { status: 401 }
+    );
+  }
+
   try {
     await client.connect();
-    const db = getDb();
+    const db = await getDb();
     const vehiclesCollection = db.collection('transports');
 
     const body = await request.json();

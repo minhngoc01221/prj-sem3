@@ -38,7 +38,7 @@ function calculateDistance(
 export async function POST(request: NextRequest) {
   try {
     await client.connect();
-    const db = getDb();
+    const db = await getDb();
 
     const body: AdvancedSearchParams = await request.json();
 

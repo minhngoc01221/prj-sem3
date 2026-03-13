@@ -5,7 +5,7 @@ import type { ContactAlertsResponse, ApiResponse } from '@/types/dashboard';
 export async function GET(): Promise<NextResponse<ApiResponse<ContactAlertsResponse>>> {
   try {
     await client.connect();
-    const db = getDb();
+    const db = await getDb();
     
     const contactsCollection = db.collection('contacts');
     

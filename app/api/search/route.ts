@@ -148,7 +148,7 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 async function searchSpots(params: ReturnType<typeof parseSearchParams>) {
   await client.connect();
-  const db = getDb();
+  const db = await getDb();
   const collection = db.collection<TouristSpot>('spots');
 
   const { page, limit, sort, query, region, minRating, maxTicketPrice, latitude, longitude, maxDistance } = params;
@@ -208,7 +208,7 @@ async function searchSpots(params: ReturnType<typeof parseSearchParams>) {
 
 async function searchHotels(params: ReturnType<typeof parseSearchParams>) {
   await client.connect();
-  const db = getDb();
+  const db = await getDb();
   const collection = db.collection<Hotel>('hotels');
 
   const { page, limit, sort, query, city, starRating, priceMin, priceMax, amenities } = params;
@@ -258,7 +258,7 @@ async function searchHotels(params: ReturnType<typeof parseSearchParams>) {
 
 async function searchRestaurants(params: ReturnType<typeof parseSearchParams>) {
   await client.connect();
-  const db = getDb();
+  const db = await getDb();
   const collection = db.collection<Restaurant>('restaurants');
 
   const { page, limit, sort, query, city, cuisineType, priceRange, style } = params;
@@ -299,7 +299,7 @@ async function searchRestaurants(params: ReturnType<typeof parseSearchParams>) {
 
 async function searchResorts(params: ReturnType<typeof parseSearchParams>) {
   await client.connect();
-  const db = getDb();
+  const db = await getDb();
   const collection = db.collection<Resort>('resorts');
 
   const { page, limit, sort, query, locationType, starRating, priceMin, priceMax, resortType, amenities } = params;
@@ -349,7 +349,7 @@ async function searchResorts(params: ReturnType<typeof parseSearchParams>) {
 
 async function searchTours(params: ReturnType<typeof parseSearchParams>) {
   await client.connect();
-  const db = getDb();
+  const db = await getDb();
   const collection = db.collection<TourPackage>('tours');
 
   const { page, limit, sort, query, priceMin, priceMax, destination, startDate, endDate, duration } = params;
@@ -406,7 +406,7 @@ async function searchTours(params: ReturnType<typeof parseSearchParams>) {
 
 async function searchTransports(params: ReturnType<typeof parseSearchParams>) {
   await client.connect();
-  const db = getDb();
+  const db = await getDb();
   const collection = db.collection<Vehicle>('vehicles');
 
   const { page, limit, sort, query, transportType, departure, arrival, priceMin, priceMax, company } = params;
@@ -510,7 +510,7 @@ interface ComboSearchBody {
 
 async function searchCombo(body: ComboSearchBody) {
   await client.connect();
-  const db = getDb();
+  const db = await getDb();
   const toursCollection = db.collection<TourPackage>('tours');
   const hotelsCollection = db.collection<Hotel>('hotels');
 
