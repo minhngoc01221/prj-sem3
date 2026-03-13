@@ -102,7 +102,6 @@ export function DashboardContent({
         <Notifications
           initialNotifications={notifications || []}
           initialUnreadCount={unreadNotificationsCount}
-          pollingInterval={30000}
         />
       </section>
     </div>
