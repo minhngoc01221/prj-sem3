@@ -8,7 +8,7 @@ export async function POST(
 ) {
   try {
     await client.connect();
-    const db = await getDb();
+    const db = getDb();
     const { id: hotelId } = await params;
 
     const reviewsCollection = db.collection('hotel_reviews');

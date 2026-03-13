@@ -4,7 +4,7 @@ import client, { getDb } from '@/lib/mongodb';
 export async function GET() {
   try {
     await client.connect();
-    const db = await getDb();
+    const db = getDb();
     const bannersCollection = db.collection('banners');
 
     const banners = await bannersCollection.find({}).sort({ position: 1 }).toArray();
@@ -32,7 +32,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     await client.connect();
-    const db = await getDb();
+    const db = getDb();
     const bannersCollection = db.collection('banners');
 
     const body = await request.json();
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     await client.connect();
-    const db = await getDb();
+    const db = getDb();
     const bannersCollection = db.collection('banners');
 
     const body = await request.json();
@@ -136,7 +136,7 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     await client.connect();
-    const db = await getDb();
+    const db = getDb();
     const bannersCollection = db.collection('banners');
 
     const { searchParams } = new URL(request.url);

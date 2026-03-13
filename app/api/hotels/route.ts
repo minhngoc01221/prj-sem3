@@ -4,7 +4,7 @@ import client, { getDb } from '@/lib/mongodb';
 export async function GET(request: Request) {
   try {
     await client.connect();
-    const db = await getDb();
+    const db = getDb();
     const hotelsCollection = db.collection('hotels');
 
     const { searchParams } = new URL(request.url);
@@ -84,7 +84,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     await client.connect();
-    const db = await getDb();
+    const db = getDb();
     const hotelsCollection = db.collection('hotels');
 
     const body = await request.json();

@@ -8,7 +8,7 @@ export async function POST(
 ) {
   try {
     await client.connect();
-    const db = await getDb();
+    const db = getDb();
     const contactsCollection = db.collection('contacts');
 
     const { id } = await params;

@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     await client.connect();
-    const db = await getDb();
+    const db = getDb();
     const { id } = await params;
 
     const hotelsCollection = db.collection('hotels');
@@ -68,7 +68,7 @@ export async function PUT(
 ) {
   try {
     await client.connect();
-    const db = await getDb();
+    const db = getDb();
     const { id } = await params;
 
     const hotelsCollection = db.collection('hotels');
@@ -131,7 +131,7 @@ export async function DELETE(
 ) {
   try {
     await client.connect();
-    const db = await getDb();
+    const db = getDb();
     const { id } = await params;
 
     const hotelsCollection = db.collection('hotels');

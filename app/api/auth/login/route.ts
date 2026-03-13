@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
   let db;
   try {
     await client.connect();
-    db = await getDb();
+    db = getDb();
     
     const body = await request.json();
     const { email, password } = body;

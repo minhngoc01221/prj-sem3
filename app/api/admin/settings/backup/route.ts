@@ -6,7 +6,7 @@ import { join } from 'path';
 export async function POST() {
   try {
     await client.connect();
-    const db = await getDb();
+    const db = getDb();
 
     // Get all collections
     const collections = await db.listCollections().toArray();

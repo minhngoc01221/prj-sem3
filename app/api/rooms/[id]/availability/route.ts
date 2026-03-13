@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     await client.connect();
-    const db = await getDb();
+    const db = getDb();
     const { id: roomId } = await params;
 
     const availabilityCollection = db.collection('room_availability');
@@ -37,7 +37,7 @@ export async function PUT(
 ) {
   try {
     await client.connect();
-    const db = await getDb();
+    const db = getDb();
     const { id: roomId } = await params;
     const body = await request.json();
 
