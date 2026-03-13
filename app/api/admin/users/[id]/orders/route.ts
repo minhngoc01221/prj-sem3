@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     await client.connect();
-    const db = await getDb();
+    const db = getDb();
     const ordersCollection = db.collection('bookings');
 
     const { id } = await params;

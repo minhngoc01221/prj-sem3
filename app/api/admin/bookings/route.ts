@@ -1,21 +1,10 @@
 import { NextResponse } from 'next/server';
 import client, { getDb } from '@/lib/mongodb';
-import { verifyAdminAuth } from '@/lib/adminAuth';
 
-// GET bookings - requires auth
 export async function GET(request: Request) {
-  const authResult = await verifyAdminAuth(request);
-  
-  if (!authResult.success) {
-    return NextResponse.json(
-      { success: false, message: authResult.error },
-      { status: 401 }
-    );
-  }
-
   try {
     await client.connect();
-    const db = await getDb();
+    const db = getDb();
     const bookingsCollection = db.collection('bookings');
 
     const { searchParams } = new URL(request.url);

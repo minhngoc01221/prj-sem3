@@ -9,7 +9,7 @@ export async function PATCH(
 ) {
   try {
     await client.connect();
-    const db = await getDb();
+    const db = getDb();
     const usersCollection = db.collection('users');
 
     const { id } = await params;
